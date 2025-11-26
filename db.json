@@ -1,0 +1,162 @@
+{
+  "patients": [
+    {
+      "id": "1",
+      "patientCode": "P001",
+      "name": "山田 太郎",
+      "nameKana": "ヤマダ タロウ",
+      "gender": "男",
+      "dateOfBirth": "1941-05-15",
+      "age": 80,
+      "medicalRecordNumber": "MR001",
+      "phone": "03-1234-5678",
+      "email": "yamada@example.com",
+      "address": "東京都渋谷区1-2-3",
+      "bloodType": "A型",
+      "allergies": ["ペニシリン"],
+      "conditions": ["高血圧", "糖尿病"],
+      "height": 170,
+      "weight": 75,
+      "bmi": 26.0,
+      "department": "5105",
+      "bed": "02",
+      "admissionDate": "2021/08/11",
+      "dischargeDate": "2021/08/15",
+      "admissionDiagnosis": "左鼡径ヘルニ",
+      "dpcDiagnosis": "左内鼡径ヘル",
+      "dpcPeriod": "08/12",
+      "wardAttendingPhysician": "田中 医師",
+      "resident": "佐藤 医師",
+      "attendingPhysicianA": "鈴木 医師",
+      "specialNotes": "身",
+      "status": "退院済",
+      "plan": true,
+      "visits": [
+        {
+          "id": "v1",
+          "date": "2021-08-11",
+          "department": "整形外科",
+          "type": "入院",
+          "diagnosis": "左鼡径ヘルニ",
+          "physician": "田中 医師",
+          "notes": "入院。手術予定。"
+        },
+        {
+          "id": "v2",
+          "date": "2021-08-12",
+          "department": "整形外科",
+          "type": "入院",
+          "diagnosis": "左鼡径ヘルニ",
+          "physician": "田中 医師",
+          "notes": "手術実施。経過良好。"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "patientCode": "P002",
+      "name": "佐藤 花子",
+      "nameKana": "サトウ ハナコ",
+      "gender": "女",
+      "dateOfBirth": "1932-03-22",
+      "age": 89,
+      "medicalRecordNumber": "MR002",
+      "phone": "03-2345-6789",
+      "email": "sato@example.com",
+      "address": "東京都新宿区4-5-6",
+      "bloodType": "B型",
+      "allergies": [],
+      "conditions": ["心不全", "S状結腸癌"],
+      "height": 155,
+      "weight": 50,
+      "bmi": 20.8,
+      "department": "5108",
+      "bed": "01",
+      "admissionDate": "2021/07/11",
+      "admissionDiagnosis": "イレウス疑い",
+      "dpcDiagnosis": "麻痺性イレウン",
+      "dpcPeriod": "07/19",
+      "wardAttendingPhysician": "山本 医師",
+      "resident": "高橋 医師",
+      "attendingPhysicianA": "伊藤 医師",
+      "status": "入院中",
+      "plan": false,
+      "nutrition": "仮",
+      "clinicalPath": true,
+      "visits": [
+        {
+          "id": "v3",
+          "date": "2021-07-11",
+          "department": "消化器外科",
+          "type": "入院",
+          "diagnosis": "イレウス疑い",
+          "physician": "山本 医師",
+          "notes": "腹痛、嘔吐あり。CT検査実施。"
+        },
+        {
+          "id": "v4",
+          "date": "2021-07-19",
+          "department": "消化器外科",
+          "type": "入院",
+          "diagnosis": "麻痺性イレウス",
+          "physician": "山本 医師",
+          "notes": "保存的治療継続中。"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "patientCode": "P003",
+      "name": "鈴木 次郎",
+      "nameKana": "スズキ ジロウ",
+      "gender": "男",
+      "dateOfBirth": "1977-09-10",
+      "age": 44,
+      "medicalRecordNumber": "MR003",
+      "phone": "03-3456-7890",
+      "email": "suzuki@example.com",
+      "address": "東京都港区7-8-9",
+      "bloodType": "O型",
+      "allergies": ["ラテックス"],
+      "conditions": ["臍ヘルニア"],
+      "height": 175,
+      "weight": 80,
+      "bmi": 26.1,
+      "department": "5111",
+      "bed": "01",
+      "admissionDate": "2021/08/11",
+      "dischargeDate": "2021/08/17",
+      "admissionDiagnosis": "臍ヘルニア嵌",
+      "dpcDiagnosis": "臍ヘルニア嵌",
+      "dpcPeriod": "08/13",
+      "wardAttendingPhysician": "中村 医師",
+      "resident": "小林 医師",
+      "attendingPhysicianA": "加藤 医師",
+      "status": "退院済",
+      "plan": true,
+      "path": true,
+      "visits": [
+        {
+          "id": "v5",
+          "date": "2021-08-11",
+          "department": "外科",
+          "type": "入院",
+          "diagnosis": "臍ヘルニア嵌頓",
+          "physician": "中村 医師",
+          "notes": "緊急入院。嵌頓ヘルニアのため緊急手術。"
+        },
+        {
+          "id": "v6",
+          "date": "2021-08-13",
+          "department": "外科",
+          "type": "入院",
+          "diagnosis": "臍ヘルニア嵌頓",
+          "physician": "中村 医師",
+          "notes": "手術後経過良好。退院予定。"
+        }
+      ]
+    }
+  ]
+}
+
+
