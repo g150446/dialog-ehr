@@ -16,7 +16,6 @@ export default async function HomePage() {
       {/* Top Header Bar */}
       <div className="bg-blue-100 border-b border-blue-200 px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold">入院(医師)1</h1>
           <div className="flex gap-2 text-sm">
             <span>ファイル(F)</span>
             <span>・</span>
@@ -45,19 +44,10 @@ export default async function HomePage() {
       <div className="bg-white border-b border-gray-200">
         <div className="flex">
           <button className="px-4 py-2 text-sm border-r border-gray-200 hover:bg-gray-50">
-            外来(医師)
+            外来
           </button>
-          <button className="px-4 py-2 text-sm border-r border-gray-200 bg-white font-semibold">
-            入院(医師)1
-          </button>
-          <button className="px-4 py-2 text-sm border-r border-gray-200 hover:bg-gray-50">
-            入院(医師)2
-          </button>
-          <button className="px-4 py-2 text-sm border-r border-gray-200 hover:bg-gray-50">
-            クリニック(外来)
-          </button>
-          <button className="px-4 py-2 text-sm hover:bg-gray-50">
-            クリニック(診察終了含む)
+          <button className="px-4 py-2 text-sm bg-white font-semibold">
+            入院
           </button>
         </div>
       </div>
