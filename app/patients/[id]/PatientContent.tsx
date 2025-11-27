@@ -26,19 +26,19 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                   : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              カルテ(1)
+              診療録
             </button>
             <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
-              カレンダー(2)
+              カレンダー
             </button>
             <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
-              指示簿(3)
+              指示簿
             </button>
             <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
-              経過表(4)
+              経過表
             </button>
             <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
-              ワークシート(5)
+              ワークシート
             </button>
             <button
               onClick={() => setActiveView('patient-info')}
@@ -61,24 +61,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               来院履歴
             </button>
           </div>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
-              ALL
-            </button>
-            <button className="px-3 py-1.5 bg-white border-2 border-blue-600 rounded text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
-              カルテ種
-            </button>
-            <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
-              記事
-            </button>
-          </div>
 
-          <div className="mt-5 pt-3 border-t border-gray-400">
-            <div className="text-xs font-bold mb-2 text-gray-700">■記載日</div>
-            <div className="text-xs mb-1.5 text-gray-700 font-medium">2021年(令和03年)</div>
-            <div className="text-xs mb-1.5 pl-2 text-gray-600">05月</div>
-            <div className="text-xs mb-1.5 pl-4 text-gray-600">27日(木)(再)整形外科</div>
-          </div>
           <div className="mt-5 pt-3 border-t border-gray-400">
             <div className="text-xs font-bold mb-2.5 text-gray-700">お気に入り</div>
             <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded mb-1.5 hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">

@@ -52,12 +52,6 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
         </div>
         <div className="flex items-center gap-2">
           <button className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs text-gray-700 font-medium shadow-sm transition-colors">
-            他患者を聞く
-          </button>
-          <button className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs text-gray-700 font-medium shadow-sm transition-colors">
-            患者呼出
-          </button>
-          <button className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs text-gray-700 font-medium shadow-sm transition-colors">
             送信のみ(Z)
           </button>
           <button className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs text-gray-700 font-medium shadow-sm transition-colors">
