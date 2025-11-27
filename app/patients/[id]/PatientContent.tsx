@@ -11,15 +11,52 @@ interface PatientContentProps {
 
 export default function PatientContent({ patient, age, bmi }: PatientContentProps) {
   const [activeView, setActiveView] = useState<'medical-records' | 'patient-info' | 'visit-history'>('medical-records');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   return (
     <>
+      {/* Mobile Hamburger Button */}
+      <button
+        onClick={() => setIsDrawerOpen(true)}
+        className="fixed top-24 right-4 z-40 md:hidden bg-blue-600 text-white p-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
+        aria-label="メニューを開く"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      {/* Mobile Drawer Overlay */}
+      {isDrawerOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setIsDrawerOpen(false)}
+        />
+      )}
+
       {/* Left Panel - Record Navigation */}
-      <div className="w-64 bg-gradient-to-b from-gray-100 to-gray-150 border-r-2 border-gray-400 overflow-y-auto shadow-inner">
+      <div className={`fixed md:static top-0 left-0 h-full md:h-auto w-64 bg-gradient-to-b from-gray-100 to-gray-150 border-r-2 border-gray-400 overflow-y-auto shadow-inner z-50 md:z-auto transform transition-transform duration-300 ease-in-out ${
+        isDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}>
         <div className="p-3">
+          {/* Mobile Close Button */}
+          <div className="flex justify-end mb-3 md:hidden">
+            <button
+              onClick={() => setIsDrawerOpen(false)}
+              className="text-gray-700 hover:text-gray-900 p-1"
+              aria-label="メニューを閉じる"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           <div className="flex flex-wrap gap-1.5 mb-3">
             <button
-              onClick={() => setActiveView('medical-records')}
+              onClick={() => {
+                setActiveView('medical-records');
+                setIsDrawerOpen(false);
+              }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
                 activeView === 'medical-records'
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
@@ -41,7 +78,10 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               ワークシート
             </button>
             <button
-              onClick={() => setActiveView('patient-info')}
+              onClick={() => {
+                setActiveView('patient-info');
+                setIsDrawerOpen(false);
+              }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
                 activeView === 'patient-info'
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
@@ -51,7 +91,10 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               患者情報
             </button>
             <button
-              onClick={() => setActiveView('visit-history')}
+              onClick={() => {
+                setActiveView('visit-history');
+                setIsDrawerOpen(false);
+              }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
                 activeView === 'visit-history'
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
@@ -97,17 +140,17 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
       </div>
 
       {/* Central Panel - Record Details */}
-      <div className="flex-1 bg-white overflow-y-auto p-6">
+      <div className="flex-1 bg-white overflow-y-auto p-3 md:p-6">
         <div className="mb-4">
           {/* Patient Information Section */}
           {activeView === 'patient-info' && (
             <>
-              <h2 className="text-xl font-bold mb-5 text-gray-800 border-b-2 border-gray-300 pb-2">患者情報</h2>
+              <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-5 text-gray-800 border-b-2 border-gray-300 pb-2">患者情報</h2>
               
               {/* Personal Details Section */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg mb-5 border-2 border-gray-300 shadow-sm">
-                <h3 className="font-bold mb-4 text-sm text-gray-800 border-b border-gray-400 pb-1">基本情報</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg mb-3 md:mb-5 border-2 border-gray-300 shadow-sm">
+                <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">基本情報</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
                   <div className="py-1">
                     <span className="text-gray-600 font-medium">氏名:</span>
                     <span className="ml-2 font-semibold text-gray-800">{patient.name}</span>
@@ -149,9 +192,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               </div>
 
               {/* Medical Information Section */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg mb-5 border-2 border-gray-300 shadow-sm">
-                <h3 className="font-bold mb-4 text-sm text-gray-800 border-b border-gray-400 pb-1">医療情報</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg mb-3 md:mb-5 border-2 border-gray-300 shadow-sm">
+                <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">医療情報</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
                   {patient.height && (
                     <div className="py-1">
                       <span className="text-gray-600 font-medium">身長:</span>
@@ -211,9 +254,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
               {/* Admission Information Section */}
               {(patient.admissionDate || patient.department) && (
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg mb-5 border-2 border-gray-300 shadow-sm">
-                  <h3 className="font-bold mb-4 text-sm text-gray-800 border-b border-gray-400 pb-1">入院情報</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg mb-3 md:mb-5 border-2 border-gray-300 shadow-sm">
+                  <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">入院情報</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
                     {patient.department && (
                       <div className="py-1">
                         <span className="text-gray-600 font-medium">部署:</span>
@@ -256,9 +299,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
               {/* Staff Information Section */}
               {(patient.wardAttendingPhysician || patient.attendingPhysicianA) && (
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg mb-5 border-2 border-gray-300 shadow-sm">
-                  <h3 className="font-bold mb-4 text-sm text-gray-800 border-b border-gray-400 pb-1">担当医情報</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg mb-3 md:mb-5 border-2 border-gray-300 shadow-sm">
+                  <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">担当医情報</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
                     {patient.wardAttendingPhysician && (
                       <div className="py-1">
                         <span className="text-gray-600 font-medium">病棟主治医:</span>
@@ -285,8 +328,8 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
           {/* Visit History Section */}
           {activeView === 'visit-history' && patient.visits && patient.visits.length > 0 && (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg border-2 border-gray-300 shadow-sm">
-              <h3 className="font-bold mb-4 text-sm text-gray-800 border-b border-gray-400 pb-1">来院履歴</h3>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+              <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">来院履歴</h3>
               <div className="space-y-3">
                 {patient.visits.map((visit) => (
                   <div key={visit.id} className="border-l-4 border-blue-600 pl-4 py-2.5 text-sm bg-white rounded-r shadow-sm">
@@ -308,8 +351,8 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
           {/* Medical Records Section */}
           {activeView === 'medical-records' && patient.medicalRecords && patient.medicalRecords.length > 0 && (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-lg border-2 border-gray-300 shadow-sm">
-              <h3 className="font-bold mb-4 text-sm text-gray-800 border-b border-gray-400 pb-1">診療録詳細</h3>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+              <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">診療録詳細</h3>
               <div className="space-y-5">
                 {patient.medicalRecords
                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -323,10 +366,10 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                     });
                     
                     return (
-                      <div key={record.id} className="bg-white rounded-lg border-2 border-gray-300 shadow-sm p-5">
+                      <div key={record.id} className="bg-white rounded-lg border-2 border-gray-300 shadow-sm p-3 md:p-5">
                         {/* Record Header */}
-                        <div className="mb-4 pb-3 border-b-2 border-gray-400">
-                          <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="mb-3 md:mb-4 pb-2 md:pb-3 border-b-2 border-gray-400">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                             <div className="flex items-center gap-3">
                               <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded">
                                 【{record.type}】
@@ -351,9 +394,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
                         {/* Vital Signs */}
                         {record.vitalSigns && (
-                          <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+                          <div className="mb-3 md:mb-4 p-2 md:p-3 bg-blue-50 rounded border border-blue-200">
                             <div className="text-xs font-bold text-blue-800 mb-2">バイタルサイン</div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
                               {record.vitalSigns.temperature && (
                                 <div>
                                   <span className="text-gray-600">体温:</span>
@@ -389,14 +432,14 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                         )}
 
                         {/* SOAP Format */}
-                        <div className="space-y-4">
+                        <div className="space-y-3 md:space-y-4">
                           {record.subjective && (
                             <div>
-                              <div className="font-bold text-sm text-gray-700 mb-1.5 flex items-center">
+                              <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
                                 <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs mr-2">S</span>
                                 <span>Subjective (主観的情報)</span>
                               </div>
-                              <div className="pl-8 text-sm text-gray-800 whitespace-pre-line bg-green-50 p-3 rounded border-l-4 border-green-500">
+                              <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-green-50 p-2 md:p-3 rounded border-l-4 border-green-500">
                                 {record.subjective}
                               </div>
                             </div>
@@ -404,11 +447,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                           
                           {record.objective && (
                             <div>
-                              <div className="font-bold text-sm text-gray-700 mb-1.5 flex items-center">
+                              <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
                                 <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs mr-2">O</span>
                                 <span>Objective (客観的情報)</span>
                               </div>
-                              <div className="pl-8 text-sm text-gray-800 whitespace-pre-line bg-blue-50 p-3 rounded border-l-4 border-blue-500">
+                              <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500">
                                 {record.objective}
                               </div>
                             </div>
@@ -416,9 +459,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
                           {/* Laboratory Results */}
                           {record.laboratoryResults && Object.keys(record.laboratoryResults).length > 0 && (
-                            <div className="pl-8">
+                            <div className="pl-4 md:pl-8">
                               <div className="text-xs font-bold text-gray-600 mb-2">検査結果:</div>
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs bg-gray-50 p-2 rounded">
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-xs bg-gray-50 p-2 rounded">
                                 {Object.entries(record.laboratoryResults).map(([key, value]) => (
                                   <div key={key} className="flex justify-between">
                                     <span className="text-gray-600">{key}:</span>
@@ -431,9 +474,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
                           {/* Imaging Results */}
                           {record.imagingResults && (
-                            <div className="pl-8">
+                            <div className="pl-4 md:pl-8">
                               <div className="text-xs font-bold text-gray-600 mb-1">画像所見:</div>
-                              <div className="text-sm text-gray-800 bg-gray-50 p-2 rounded">
+                              <div className="text-xs md:text-sm text-gray-800 bg-gray-50 p-2 rounded">
                                 {record.imagingResults}
                               </div>
                             </div>
@@ -441,11 +484,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
                           {record.assessment && (
                             <div>
-                              <div className="font-bold text-sm text-gray-700 mb-1.5 flex items-center">
+                              <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
                                 <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs mr-2">A</span>
                                 <span>Assessment (評価・診断)</span>
                               </div>
-                              <div className="pl-8 text-sm text-gray-800 whitespace-pre-line bg-yellow-50 p-3 rounded border-l-4 border-yellow-500">
+                              <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-yellow-50 p-2 md:p-3 rounded border-l-4 border-yellow-500">
                                 {record.assessment}
                               </div>
                             </div>
@@ -453,11 +496,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
                           {record.plan && (
                             <div>
-                              <div className="font-bold text-sm text-gray-700 mb-1.5 flex items-center">
+                              <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
                                 <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs mr-2">P</span>
                                 <span>Plan (治療計画)</span>
                               </div>
-                              <div className="pl-8 text-sm text-gray-800 whitespace-pre-line bg-purple-50 p-3 rounded border-l-4 border-purple-500">
+                              <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-purple-50 p-2 md:p-3 rounded border-l-4 border-purple-500">
                                 {record.plan}
                               </div>
                             </div>
@@ -465,11 +508,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
                           {/* Medications */}
                           {record.medications && record.medications.length > 0 && (
-                            <div className="pl-8 mt-3">
+                            <div className="pl-4 md:pl-8 mt-3">
                               <div className="text-xs font-bold text-gray-600 mb-2">処方薬:</div>
                               <div className="space-y-2">
                                 {record.medications.map((med, idx) => (
-                                  <div key={idx} className="bg-white border border-gray-300 rounded p-2 text-sm">
+                                  <div key={idx} className="bg-white border border-gray-300 rounded p-2 text-xs md:text-sm">
                                     <div className="font-medium text-gray-800">{med.name}</div>
                                     <div className="text-gray-600 text-xs mt-1">
                                       {med.dosage} / {med.frequency}
@@ -482,9 +525,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                           )}
 
                           {record.notes && (
-                            <div className="pl-8 mt-3 pt-3 border-t border-gray-300">
+                            <div className="pl-4 md:pl-8 mt-3 pt-3 border-t border-gray-300">
                               <div className="text-xs font-bold text-gray-600 mb-1">備考:</div>
-                              <div className="text-sm text-gray-700">{record.notes}</div>
+                              <div className="text-xs md:text-sm text-gray-700">{record.notes}</div>
                             </div>
                           )}
                         </div>
