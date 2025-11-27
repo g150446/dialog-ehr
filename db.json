@@ -6,49 +6,320 @@
       "name": "山田 太郎",
       "nameKana": "ヤマダ タロウ",
       "gender": "男",
-      "dateOfBirth": "1941-05-15",
+      "dateOfBirth": "1945-01-01",
       "age": 80,
       "medicalRecordNumber": "MR001",
       "phone": "03-1234-5678",
       "email": "yamada@example.com",
       "address": "東京都渋谷区1-2-3",
       "bloodType": "A型",
-      "allergies": ["ペニシリン"],
-      "conditions": ["高血圧", "糖尿病"],
+      "allergies": [],
+      "conditions": ["2型糖尿病", "高血圧症"],
       "height": 170,
       "weight": 75,
       "bmi": 26.0,
-      "department": "5105",
+      "chiefComplaint": "転居に伴う継続処方希望",
+      "smokingHistory": "禁煙20年（元20本/日）",
+      "drinkingHistory": "機会飲酒程度",
+      "department": "内科",
       "bed": "02",
-      "admissionDate": "2021/08/11",
-      "dischargeDate": "2021/08/15",
-      "admissionDiagnosis": "左鼡径ヘルニ",
-      "dpcDiagnosis": "左内鼡径ヘル",
-      "dpcPeriod": "08/12",
+      "admissionDate": "2025/11/27",
+      "admissionDiagnosis": "細菌性肺炎",
+      "status": "入院中",
       "wardAttendingPhysician": "田中 医師",
-      "resident": "佐藤 医師",
-      "attendingPhysicianA": "鈴木 医師",
-      "specialNotes": "身",
-      "status": "退院済",
-      "plan": true,
       "visits": [
         {
           "id": "v1",
-          "date": "2021-08-11",
-          "department": "整形外科",
-          "type": "入院",
-          "diagnosis": "左鼡径ヘルニ",
+          "date": "2023-10-10",
+          "department": "内科",
+          "type": "外来",
+          "diagnosis": "2型糖尿病、高血圧症",
           "physician": "田中 医師",
-          "notes": "入院。手術予定。"
+          "notes": "初診。転居に伴う継続処方希望。"
         },
         {
           "id": "v2",
-          "date": "2021-08-12",
-          "department": "整形外科",
-          "type": "入院",
-          "diagnosis": "左鼡径ヘルニ",
+          "date": "2023-10-24",
+          "department": "内科",
+          "type": "外来",
+          "diagnosis": "2型糖尿病、高血圧症、B型肝炎ウイルスキャリア疑い",
           "physician": "田中 医師",
-          "notes": "手術実施。経過良好。"
+          "notes": "再診。HBs抗原陽性判明。"
+        },
+        {
+          "id": "v3",
+          "date": "2025-11-27",
+          "department": "内科",
+          "type": "入院",
+          "diagnosis": "細菌性肺炎",
+          "physician": "田中 医師",
+          "notes": "入院決定日。発熱、咳嗽、呼吸困難。"
+        }
+      ],
+      "medicalRecords": [
+        {
+          "id": "mr1",
+          "date": "2023-10-10",
+          "type": "初診",
+          "visitType": "外来",
+          "subjective": "数日前に息子夫婦と同居のため転居してきた。紹介状持参。\n体調は特に変化なし。糖尿病と血圧の薬を以前の医院で長くもらっていた。\n自覚症状：特になし。食欲あり。便通整。",
+          "objective": "BP 132/76, HR 72 reg, SpO2 98%(RA).\n胸部：ラ音なし、心音整。\n腹部：平坦、軟、圧痛なし。\n下腿浮腫なし。\n持参薬確認：メトホルミン250mg 4T/2x、アジルバ20mg 1T/1x\n採血（一般、生化学、HbA1c、感染症スクリーニング含む）、尿検査施行。",
+          "assessment": "1. 2型糖尿病：以前よりコントロールはおおむね良好とのこと。\n2. 高血圧症：本日血圧安定。\n3. 転入時スクリーニング",
+          "plan": "処方はDoで継続。\n感染症スクリーニング（HBsAg, HCVAb等）の結果確認のため2週間後に再診指示。\n\nRp)\n1. メトホルミン塩酸塩錠250mg 4錠 分2 朝夕食後 14日分\n2. アジルバ錠20mg 1錠 分1 朝食後 14日分",
+          "vitalSigns": {
+            "bloodPressure": "132/76",
+            "heartRate": "72",
+            "spO2": "98%(RA)"
+          },
+          "medications": [
+            {
+              "name": "メトホルミン塩酸塩錠250mg",
+              "dosage": "4錠",
+              "frequency": "分2 朝夕食後",
+              "duration": "14日分"
+            },
+            {
+              "name": "アジルバ錠20mg",
+              "dosage": "1錠",
+              "frequency": "分1 朝食後",
+              "duration": "14日分"
+            }
+          ],
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr2",
+          "date": "2023-10-24",
+          "type": "再診",
+          "visitType": "外来",
+          "subjective": "変わりなし。薬も飲めている。",
+          "objective": "BP 128/70, HR 68.\n検査結果（10/10分）：\n• HbA1c 6.8%, Cre 0.92, eGFR 62.\n• HBs抗原 (+) 陽性, HCV抗体 (-).\n• AST 28, ALT 25, γ-GTP 35. PLT 21.0万.",
+          "assessment": "1. 2型糖尿病・高血圧症：安定。\n2. B型肝炎ウイルスキャリア疑い\n   • HBs抗原陽性が判明。本人に告知するも「昔言われたような気もするが覚えていない」とのこと。\n   • 現在の肝機能(ALT)は正常範囲内。\n   • 詳細評価が必要（HBV-DNA定量、腹部エコー）。",
+          "plan": "HBV精査追加。\nRp) 定期処方 90日分（次回より3ヶ月毎とする）\n検査オーダー：HBV-DNA定量、腹部エコー（本日施行）",
+          "vitalSigns": {
+            "bloodPressure": "128/70",
+            "heartRate": "68"
+          },
+          "laboratoryResults": {
+            "HbA1c": "6.8%",
+            "Cre": "0.92",
+            "eGFR": "62",
+            "HBs抗原": "(+) 陽性",
+            "HCV抗体": "(-)",
+            "AST": "28",
+            "ALT": "25",
+            "γ-GTP": "35",
+            "PLT": "21.0万"
+          },
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr3",
+          "date": "2024-01-23",
+          "type": "再診",
+          "visitType": "外来",
+          "subjective": "風邪もひかず元気。毎日散歩している。",
+          "objective": "BP 130/78.\n腹部エコー結果（10/24施行）：肝実質エコーレベル正常、表面平滑、脾腫なし。肝硬変所見なし。肝腫瘍性病変なし。\n検査結果（10/24分）：\n• HBV-DNA定量: 3.5 Log copy/mL (約3,000 IU/mL)\n• HBe抗原(-), HBe抗体(+).",
+          "assessment": "1. 慢性B型肝炎（非活動性キャリアの状態）\n   • DNA量は3000 IU/mL程度あるが、ALT正常(25)、肝線維化所見なし。\n   • 現時点で核酸アナログ製剤（ETV/TAF等）の導入基準満たさず。経過観察とする。\n2. DM/HT：安定。",
+          "plan": "処方Do。肝機能は定期的にフォローする。\n次回、採血予定。",
+          "vitalSigns": {
+            "bloodPressure": "130/78"
+          },
+          "laboratoryResults": {
+            "HBV-DNA定量": "3.5 Log copy/mL (約3,000 IU/mL)",
+            "HBe抗原": "(-)",
+            "HBe抗体": "(+)"
+          },
+          "imagingResults": "腹部エコー：肝実質エコーレベル正常、表面平滑、脾腫なし。肝硬変所見なし。肝腫瘍性病変なし。",
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr4",
+          "date": "2024-04-23",
+          "type": "再診",
+          "visitType": "外来",
+          "subjective": "特変なし。",
+          "objective": "BP 128/72.\n本日の採血：HbA1c 6.9%, AST 26, ALT 24.\n肝機能悪化なし。",
+          "assessment": "状態安定。",
+          "plan": "処方Do。夏場に向け脱水注意指導。",
+          "vitalSigns": {
+            "bloodPressure": "128/72"
+          },
+          "laboratoryResults": {
+            "HbA1c": "6.9%",
+            "AST": "26",
+            "ALT": "24"
+          },
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr5",
+          "date": "2024-07-23",
+          "type": "再診",
+          "visitType": "外来",
+          "subjective": "暑いが食欲は落ちていない。水分は摂るようにしている。",
+          "objective": "BP 124/68. 脱水所見なし。",
+          "assessment": "DM/HT/HBV carrier 経過良好。",
+          "plan": "処方Do。\n次回、年1回の腹部エコー予定。",
+          "vitalSigns": {
+            "bloodPressure": "124/68"
+          },
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr6",
+          "date": "2024-10-22",
+          "type": "再診",
+          "visitType": "外来",
+          "subjective": "変わりなし。",
+          "objective": "BP 134/76.\n腹部エコー（本日）：前回と比較し著変なし。肝腫瘍なし。\n採血：HbA1c 7.0%, AST 30, ALT 28 (基準値内), HBV-DNA定量オーダー（年1回フォロー）。",
+          "assessment": "HBVキャリア：画像上HCCなし、活動性上昇の兆候なし。\nDM：A1c微増だが許容範囲。",
+          "plan": "処方Do。\nインフルエンザワクチン接種施行。",
+          "vitalSigns": {
+            "bloodPressure": "134/76"
+          },
+          "laboratoryResults": {
+            "HbA1c": "7.0%",
+            "AST": "30",
+            "ALT": "28"
+          },
+          "imagingResults": "腹部エコー：前回と比較し著変なし。肝腫瘍なし。",
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr7",
+          "date": "2025-01-21",
+          "type": "再診",
+          "visitType": "外来",
+          "subjective": "年末年始で少し食べすぎたかもしれない。",
+          "objective": "BP 138/80. 体重+2kg.\n前回(10月)のHBV-DNA：3.6 Log copy/mL (著変なし)。",
+          "assessment": "DM：季節変動あり。食事指導再確認。\nHBV：Status Quo.",
+          "plan": "処方Do。",
+          "vitalSigns": {
+            "bloodPressure": "138/80"
+          },
+          "laboratoryResults": {
+            "HBV-DNA": "3.6 Log copy/mL (著変なし)"
+          },
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr8",
+          "date": "2025-04-22",
+          "type": "再診",
+          "visitType": "外来",
+          "subjective": "体重戻った。体調良好。",
+          "objective": "BP 130/70.\n採血：HbA1c 6.8%, ALT 22.",
+          "assessment": "コントロール良好。",
+          "plan": "処方Do。",
+          "vitalSigns": {
+            "bloodPressure": "130/70"
+          },
+          "laboratoryResults": {
+            "HbA1c": "6.8%",
+            "ALT": "22"
+          },
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr9",
+          "date": "2025-07-22",
+          "type": "再診",
+          "visitType": "外来",
+          "subjective": "特に変わりなし。",
+          "objective": "BP 126/74.",
+          "assessment": "安定。",
+          "plan": "処方Do。",
+          "vitalSigns": {
+            "bloodPressure": "126/74"
+          },
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr10",
+          "date": "2025-10-21",
+          "type": "再診",
+          "visitType": "外来",
+          "subjective": "急に寒くなってきたが風邪はひいていない。",
+          "objective": "BP 132/78.\n採血：HbA1c 6.9%, AST 28, ALT 26.\n腹部エコー（予定）：著変なし。",
+          "assessment": "全身状態安定。HBV再活性化の兆候なし。",
+          "plan": "処方Do。\nコロナワクチン接種について相談あり、次回以降検討。",
+          "vitalSigns": {
+            "bloodPressure": "132/78"
+          },
+          "laboratoryResults": {
+            "HbA1c": "6.9%",
+            "AST": "28",
+            "ALT": "26"
+          },
+          "imagingResults": "腹部エコー：著変なし。",
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr11",
+          "date": "2025-11-27",
+          "type": "外来受診",
+          "visitType": "外来",
+          "subjective": "3日前から38℃台の発熱、咳嗽、黄色痰あり。市販薬で様子見ていたが解熱せず、今朝から呼吸が苦しいとのことで家族に連れられ受診。食欲低下あり。",
+          "objective": "Vital: BT 38.5℃, BP 110/60, HR 102 reg, SpO2 91%(RA) / 94%(N2L).\nGen: 急性病容、努力呼吸あり。\nChest: 右肺野にCoarse crackles聴取。\nExt: 下腿浮腫(-)\nLabs:\n• WBC 14,800, Neut 88%, CRP 12.5.\n• BUN 28, Cre 1.10 (脱水疑い).\n• HbA1c 7.1%. AST 45, ALT 38 (軽度上昇).\n• COVID-19 Ag(-), Flu Ag(-).\nCXR/CT: 右中下葉に浸潤影およびすりガラス影あり。",
+          "assessment": "1. 細菌性肺炎 (中等症〜重症)\n   • A-DROPスコア：Age(男70歳以上)=1, Dehydration(BUN21以上)=1, Respiration(SpO2 90以下ではないが低い)=0, Orientation=0, Pressure(sBP 90以下ではない)=0.\n   • スコア2点だが、80歳高齢、DM基礎疾患あり、SpO2低下顕著のため入院加療が望ましいと判断。\n2. 脱水症\n3. 2型糖尿病、B型肝炎キャリア（肝機能軽度上昇は感染に伴うものか要観察）",
+          "plan": "即日入院とする。\n酸素投与開始。\n抗生剤：ABPC/SBT 3g 1日2回 点滴静注で開始。\n補液：細胞外液 1000ml/日〜。\nDM薬（メトホルミン）はシックデイのため中止、インスリンスライディングスケール対応とする。",
+          "vitalSigns": {
+            "temperature": "38.5℃",
+            "bloodPressure": "110/60",
+            "heartRate": "102",
+            "spO2": "91%(RA) / 94%(N2L)"
+          },
+          "laboratoryResults": {
+            "WBC": "14,800",
+            "Neut": "88%",
+            "CRP": "12.5",
+            "BUN": "28",
+            "Cre": "1.10",
+            "HbA1c": "7.1%",
+            "AST": "45",
+            "ALT": "38",
+            "COVID-19 Ag": "(-)",
+            "Flu Ag": "(-)"
+          },
+          "imagingResults": "CXR/CT: 右中下葉に浸潤影およびすりガラス影あり。",
+          "medications": [
+            {
+              "name": "ABPC/SBT",
+              "dosage": "3g",
+              "frequency": "1日2回 点滴静注"
+            }
+          ],
+          "physician": "田中 医師"
+        },
+        {
+          "id": "mr12",
+          "date": "2025-11-28",
+          "type": "入院診療録",
+          "visitType": "入院",
+          "dayOfStay": 2,
+          "subjective": "「昨日より少し息が楽になった気がする。痰が出にくい」\n夜間は眠れた様子。",
+          "objective": "Vital: BT 37.4℃, BP 124/70, HR 88, SpO2 96%(N2L).\nChest: 右肺野 Crackles 依然著明だが、Air入りは悪くない。\nIn/Out: 補液+飲水で1500ml / 尿量 1200ml (利尿ついている)。\n食事: 糖尿病食（軟菜）5割摂取。\n血糖: 朝食前 158.",
+          "assessment": "肺炎治療2日目。解熱傾向あり、酸素化改善傾向。\n脱水は補正されつつある。\nB型肝炎については、化学療法や免疫抑制療法を行うわけではないが、高齢者の重症感染症であり、入院中の再活性化（de novo含む）念のため注意。現時点では抗ウイルス薬不要、経過観察継続。",
+          "plan": "抗生剤継続（ABPC/SBT）。\n酸素2L継続、SPO2安定すれば減量トライ。\nリハビリ介入依頼（廃用予防）。\nメトホルミン休薬継続。",
+          "vitalSigns": {
+            "temperature": "37.4℃",
+            "bloodPressure": "124/70",
+            "heartRate": "88",
+            "spO2": "96%(N2L)",
+            "oxygenFlow": "2L"
+          },
+          "laboratoryResults": {
+            "血糖": "158 (朝食前)"
+          },
+          "medications": [
+            {
+              "name": "ABPC/SBT",
+              "dosage": "3g",
+              "frequency": "1日2回 点滴静注"
+            }
+          ],
+          "physician": "田中 医師"
         }
       ]
     },

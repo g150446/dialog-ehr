@@ -50,6 +50,14 @@ export interface Patient {
   
   // Visit History
   visits?: Visit[];
+  
+  // Medical Records
+  medicalRecords?: MedicalRecord[];
+  
+  // Additional Medical Information
+  chiefComplaint?: string;
+  smokingHistory?: string;
+  drinkingHistory?: string;
 }
 
 export interface Visit {
@@ -60,6 +68,45 @@ export interface Visit {
   diagnosis?: string;
   notes?: string;
   physician?: string;
+}
+
+export interface MedicalRecord {
+  id: string;
+  date: string;
+  type: '初診' | '再診' | '外来受診' | '入院診療録';
+  visitType?: '外来' | '入院';
+  dayOfStay?: number; // For inpatient records (e.g., 入院2日目)
+  
+  // SOAP format
+  subjective?: string;
+  objective?: string;
+  assessment?: string;
+  plan?: string;
+  
+  // Additional fields
+  vitalSigns?: {
+    temperature?: string;
+    bloodPressure?: string;
+    heartRate?: string;
+    spO2?: string;
+    oxygenFlow?: string;
+  };
+  
+  laboratoryResults?: {
+    [key: string]: string | number;
+  };
+  
+  imagingResults?: string;
+  
+  medications?: {
+    name: string;
+    dosage: string;
+    frequency: string;
+    duration?: string;
+  }[];
+  
+  physician?: string;
+  notes?: string;
 }
 
 

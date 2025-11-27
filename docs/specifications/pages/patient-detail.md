@@ -2,11 +2,13 @@
 
 ## Overview
 
-The Patient Detail Page provides a comprehensive view of an individual patient's complete medical record. It displays all patient information organized into logical sections, including basic demographics, medical history, admission details, staff assignments, and visit history. The page serves as the primary interface for healthcare providers to review and manage patient records.
+The Patient Detail Page provides a comprehensive view of an individual patient's complete medical record. It displays patient information organized into logical sections, including basic demographics, medical history, admission details, staff assignments, visit history, and detailed medical records in SOAP format. The page features a view toggle system that allows users to switch between viewing medical records, patient information, or visit history. By default, the page displays medical records. The page serves as the primary interface for healthcare providers to review and manage patient records.
 
 **Page Route**: `/patients/[id]` (dynamic route)  
-**Component File**: `app/patients/[id]/page.tsx`  
-**Page Type**: Server Component (Next.js App Router)  
+**Component Files**: 
+  - `app/patients/[id]/page.tsx` (Server Component - data fetching)
+  - `app/patients/[id]/PatientContent.tsx` (Client Component - view state and interactivity)
+**Page Type**: Hybrid (Server Component with Client Component for interactivity)  
 **404 Handler**: `app/patients/[id]/not-found.tsx`
 
 ## User Roles
@@ -33,10 +35,11 @@ The Patient Detail Page provides a comprehensive view of an individual patient's
 
 2. **Information Sections**
    - **Basic Information**: Name, gender, date of birth, patient code, contact information
-   - **Medical Information**: Height, weight, BMI, blood type, allergies, conditions
+   - **Medical Information**: Height, weight, BMI, blood type, allergies, conditions, chief complaint, smoking history, drinking history
    - **Admission Information**: Department, bed, admission/discharge dates, diagnoses
    - **Staff Information**: Ward attending physician, resident, attending physicians
    - **Visit History**: Chronological list of patient visits with dates, departments, diagnoses, physicians, and notes
+   - **Medical Records**: Detailed SOAP-format medical records with vital signs, laboratory results, imaging results, medications, and clinical notes
 
 3. **Calculations**
    - **Age Calculation**: Calculate current age from date of birth
@@ -47,6 +50,8 @@ The Patient Detail Page provides a comprehensive view of an individual patient's
    - Navigate back to patient list via "一覧に戻る" button
    - Route: `/` (root route)
    - Maintain navigation state
+   - Toggle between views using sidebar buttons: "カルテ(1)", "患者情報", "来院履歴"
+   - View state managed client-side using React useState hook
 
 5. **Header Actions**
    - Other patient search ("他患者を聞く")
@@ -58,11 +63,13 @@ The Patient Detail Page provides a comprehensive view of an individual patient's
 
 6. **Left Sidebar Navigation**
    - Record type buttons:
-     - カルテ (Chart) - Active state
-     - カレンダー (Calendar)
-     - 指示簿 (Order Book)
-     - 経過表 (Progress Sheet)
-     - ワークシート (Worksheet)
+     - カルテ (Chart) - Shows medical records view, active when medical records are displayed
+     - カレンダー (Calendar) - Placeholder
+     - 指示簿 (Order Book) - Placeholder
+     - 経過表 (Progress Sheet) - Placeholder
+     - ワークシート (Worksheet) - Placeholder
+     - 患者情報 (Patient Information) - Shows patient information view only
+     - 来院履歴 (Visit History) - Shows visit history view only
    - Filter buttons:
      - ALL
      - カルテ種 (Chart Type) - Active state
@@ -81,6 +88,17 @@ The Patient Detail Page provides a comprehensive view of an individual patient's
      - 所見歴 (m) - Findings History
      - ★検査・放射線 (e) - Tests & Radiology
      - ★処置・指導 (d) - Procedures & Instructions
+
+7. **View Toggle Functionality**
+   - The page uses a client-side state to manage which content section is displayed
+   - Three possible views: `'medical-records'`, `'patient-info'`, `'visit-history'`
+   - Default view: `'medical-records'` (shows medical records on page load)
+   - Clicking "カルテ(1)" button: Shows medical records view
+   - Clicking "患者情報" button: Shows ONLY patient information section (hides medical records)
+   - Clicking "来院履歴" button: Shows ONLY visit history section (hides medical records)
+   - Only one view is displayed at a time (exclusive view switching)
+   - Active button styling: White background with blue border (`bg-white border-2 border-blue-600`)
+   - Inactive button styling: Gray background (`bg-gray-200 border border-gray-400`)
 
 ## UI Layout
 
@@ -219,9 +237,17 @@ interface Patient {
   
   // Visit History
   visits?: Visit[];
+  
+  // Medical Records
+  medicalRecords?: MedicalRecord[];
+  
+  // Additional Medical Information
+  chiefComplaint?: string;
+  smokingHistory?: string;
+  drinkingHistory?: string;
 }
 
-interface Visit {
+export interface Visit {
   id: string;
   date: string;
   department: string;
@@ -230,16 +256,56 @@ interface Visit {
   notes?: string;
   physician?: string;
 }
+
+export interface MedicalRecord {
+  id: string;
+  date: string;
+  type: '初診' | '再診' | '外来受診' | '入院診療録';
+  visitType?: '外来' | '入院';
+  dayOfStay?: number; // For inpatient records (e.g., 入院2日目)
+  
+  // SOAP format
+  subjective?: string;
+  objective?: string;
+  assessment?: string;
+  plan?: string;
+  
+  // Additional fields
+  vitalSigns?: {
+    temperature?: string;
+    bloodPressure?: string;
+    heartRate?: string;
+    spO2?: string;
+    oxygenFlow?: string;
+  };
+  
+  laboratoryResults?: {
+    [key: string]: string | number;
+  };
+  
+  imagingResults?: string;
+  
+  medications?: {
+    name: string;
+    dosage: string;
+    frequency: string;
+    duration?: string;
+  }[];
+  
+  physician?: string;
+  notes?: string;
+}
 ```
 
 ### Data Display Mapping
 
 - **Info Bar**: name, gender, dateOfBirth, age (calculated), height, weight, BMI (calculated), patientCode, medicalRecordNumber
 - **Basic Info Section**: name, nameKana, gender, dateOfBirth, age (calculated), patientCode, phone, email, address
-- **Medical Info Section**: height, weight, BMI (calculated), bloodType, allergies, conditions
+- **Medical Info Section**: height, weight, BMI (calculated), bloodType, allergies, conditions, chiefComplaint, smokingHistory, drinkingHistory
 - **Admission Info Section**: department, bed, admissionDate, dischargeDate, admissionDiagnosis, dpcDiagnosis
 - **Staff Info Section**: wardAttendingPhysician, resident, attendingPhysicianA
 - **Visit History Section**: visits array (all fields)
+- **Medical Records Section**: medicalRecords array (all fields, displayed in SOAP format)
 
 ## API Contract
 
@@ -392,12 +458,20 @@ const bmi = patient.height && patient.weight
 
 ### Conditional Section Rendering
 
-**Rules**:
-- **Admission Information**: Only displays if `admissionDate` or `department` exists
-- **Staff Information**: Only displays if `wardAttendingPhysician` or `attendingPhysicianA` exists
-- **Visit History**: Only displays if `visits` array exists and has length > 0
-- **Medical Information**: Always displays, but fields conditionally rendered
-- **Basic Information**: Always displays, but optional fields conditionally rendered
+**View-Based Rendering**:
+- The page uses an `activeView` state to control which content section is displayed
+- Three possible views: `'medical-records'`, `'patient-info'`, `'visit-history'`
+- Only one view is displayed at a time (exclusive rendering)
+- Default view on page load: `'medical-records'`
+
+**Section-Specific Rules**:
+- **Patient Information Section**: Only displays when `activeView === 'patient-info'`
+  - **Admission Information**: Only displays if `admissionDate` or `department` exists
+  - **Staff Information**: Only displays if `wardAttendingPhysician` or `attendingPhysicianA` exists
+  - **Medical Information**: Always displays within patient info view, but fields conditionally rendered
+  - **Basic Information**: Always displays within patient info view, but optional fields conditionally rendered
+- **Visit History Section**: Only displays when `activeView === 'visit-history'` and `visits` array exists with length > 0
+- **Medical Records Section**: Only displays when `activeView === 'medical-records'` and `medicalRecords` array exists with length > 0
 
 ### Visit History Display
 
@@ -411,6 +485,28 @@ const bmi = patient.height && patient.weight
 - Visit cards have left border accent (blue-600)
 - White background with shadow
 - Spacing between visits: `space-y-3`
+- Only displayed when `activeView === 'visit-history'`
+
+### Medical Records Display
+
+**Rules**:
+- Display medical records sorted by date (newest first)
+- Each record displays in SOAP format with color-coded sections:
+  - **S (Subjective)**: Green background (`bg-green-50`), green left border (`border-green-500`)
+  - **O (Objective)**: Blue background (`bg-blue-50`), blue left border (`border-blue-500`)
+  - **A (Assessment)**: Yellow background (`bg-yellow-50`), yellow left border (`border-yellow-500`)
+  - **P (Plan)**: Purple background (`bg-purple-50`), purple left border (`border-purple-500`)
+- Record header displays:
+  - Record type badge (e.g., 【初診】, 【再診】)
+  - Date formatted in Japanese locale
+  - Visit type badge (if applicable)
+  - Day of stay badge for inpatient records (if applicable)
+  - Physician name (if available)
+- Vital signs displayed in a grid format when available
+- Laboratory results displayed in a grid format when available
+- Imaging results displayed as text when available
+- Medications displayed as cards with name, dosage, frequency, and duration
+- Only displayed when `activeView === 'medical-records'`
 
 ### Field Display Formatting
 
@@ -491,13 +587,17 @@ The `not-found.tsx` component handles patient not found scenarios:
 
 1. **Data Loading**
    - Server-side rendering (SSR) via Next.js App Router
+   - Patient data fetched server-side in `page.tsx`
    - No client-side data fetching
    - Fresh data on each page load (`cache: 'no-store'`)
+   - Data passed as props to client component
 
 2. **Rendering**
-   - Conditional rendering reduces DOM size for missing data
-   - Efficient React rendering with proper keys for visit lists
+   - Conditional rendering reduces DOM size - only active view section is rendered
+   - View state managed client-side using React useState hook
+   - Efficient React rendering with proper keys for visit lists and medical records
    - Fixed height layout prevents layout shifts
+   - Client component handles only view switching (no data fetching)
 
 3. **Calculations**
    - Age and BMI calculated on server side
@@ -599,7 +699,9 @@ The `not-found.tsx` component handles patient not found scenarios:
 
 - **Data Model**: `types/patient.ts`
 - **API Implementation**: `lib/api.ts`
-- **Component Implementation**: `app/patients/[id]/page.tsx`
+- **Component Implementation**: 
+  - Server Component: `app/patients/[id]/page.tsx`
+  - Client Component: `app/patients/[id]/PatientContent.tsx` (handles view state and interactive elements)
 - **404 Handler**: `app/patients/[id]/not-found.tsx`
 - **Patient List Page**: `docs/specifications/pages/patient-list.md`
 
