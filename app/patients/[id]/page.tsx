@@ -45,13 +45,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
         <div className="flex items-center gap-6">
           <h1 className="text-white text-lg font-semibold tracking-wide">Narrative Hospital</h1>
           <div className="h-6 w-px bg-blue-500"></div>
-          <h2 className="text-blue-100 text-base font-medium">カルテ・オーダー入力・[カルテ一覧]</h2>
-          <div className="h-6 w-px bg-blue-500"></div>
           <div className="flex gap-3 text-sm text-blue-100">
-            <span className="hover:text-white cursor-pointer">ファイル(E)</span>
-            <span className="text-blue-400">・</span>
-            <span className="hover:text-white cursor-pointer">表示(V)</span>
-            <span className="text-blue-400">・</span>
             <span className="hover:text-white cursor-pointer">ヘルプ(H)</span>
           </div>
         </div>
@@ -151,6 +145,37 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
               <div className="text-xs mb-1.5 text-gray-700 font-medium">2021年(令和03年)</div>
               <div className="text-xs mb-1.5 pl-2 text-gray-600">05月</div>
               <div className="text-xs mb-1.5 pl-4 text-gray-600">27日(木)(再)整形外科</div>
+            </div>
+            <div className="mt-5 pt-3 border-t border-gray-400">
+              <div className="text-xs font-bold mb-2.5 text-gray-700">お気に入り</div>
+              <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded mb-1.5 hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
+                オーダ機能1
+              </button>
+              <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded mb-1.5 hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
+                オーダ機能2
+              </button>
+            </div>
+            <div className="mt-5 pt-3 border-t border-gray-400">
+              <div className="space-y-1.5">
+                <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
+                  ★投薬 (a)
+                </button>
+                <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
+                  ★注射 (b)
+                </button>
+                <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
+                  検査結果照会 (l)
+                </button>
+                <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
+                  所見歴 (m)
+                </button>
+                <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
+                  ★検査・放射線 (e)
+                </button>
+                <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
+                  ★処置・指導 (d)
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -341,39 +366,6 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
                 </div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Right Sidebar - Action Buttons */}
-        <div className="w-48 bg-gradient-to-b from-gray-100 to-gray-150 border-l-2 border-gray-400 overflow-y-auto p-3 shadow-inner">
-          <div className="mb-5 pb-3 border-b border-gray-400">
-            <div className="text-xs font-bold mb-2.5 text-gray-700">お気に入り</div>
-            <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded mb-1.5 hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
-              オーダ機能1
-            </button>
-            <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded mb-1.5 hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
-              オーダ機能2
-            </button>
-          </div>
-          <div className="space-y-1.5">
-            <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
-              ★投薬 (a)
-            </button>
-            <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
-              ★注射 (b)
-            </button>
-            <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
-              検査結果照会 (l)
-            </button>
-            <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
-              所見歴 (m)
-            </button>
-            <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
-              ★検査・放射線 (e)
-            </button>
-            <button className="w-full text-left px-3 py-2 text-xs bg-white border-2 border-gray-400 rounded hover:bg-gray-50 hover:border-blue-500 transition-colors shadow-sm">
-              ★処置・指導 (d)
-            </button>
           </div>
         </div>
       </div>
