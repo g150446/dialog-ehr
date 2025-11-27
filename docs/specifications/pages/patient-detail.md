@@ -122,7 +122,7 @@ The page uses a two-panel horizontal layout:
 ### Page Structure
 
 1. **Top Header Bar** (`bg-gradient-to-r from-blue-600 to-blue-700`)
-   - Hospital name: "Narrative Hospital"
+   - Hospital name: "Dialog Hospital"
    - Menu items (Help)
    - Action buttons (Other patient search, Patient call, Send only, End examination, Complete)
    - Height: Auto (py-3 padding)

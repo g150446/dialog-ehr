@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Patient List Page is the primary inpatient management interface for the Narrative Hospital EHR system. It displays all admitted patients in a comprehensive table format, allowing healthcare providers to quickly view patient information and navigate to detailed patient records.
+The Patient List Page is the primary inpatient management interface for the Dialog Hospital EHR system. It displays all admitted patients in a comprehensive table format, allowing healthcare providers to quickly view patient information and navigate to detailed patient records.
 
 **Page Route**: `/` (root route)  
 **Component File**: `app/page.tsx`  
@@ -64,7 +64,7 @@ The Patient List Page is the primary inpatient management interface for the Narr
 The page follows a vertical layout with the following sections:
 
 1. **Top Header Bar** (`bg-gradient-to-r from-blue-600 to-blue-700`)
-   - Hospital name: "Narrative Hospital"
+   - Hospital name: "Dialog Hospital"
    - Menu items (File, Help)
    - Action buttons (Logout, Display Change, Refresh, Exit)
    - Height: Auto (py-3 padding)

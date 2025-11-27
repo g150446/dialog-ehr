@@ -39,7 +39,7 @@ npm run dev
 ## Project Structure
 
 ```
-narrative-ehr/
+dialog-ehr/
 ├── app/                    # Next.js app directory
 │   ├── layout.tsx         # Root layout
 │   ├── page.tsx           # Patient list page

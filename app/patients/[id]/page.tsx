@@ -44,7 +44,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
       {/* Top Header Bar */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 border-b-2 border-blue-800 px-6 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-6">
-          <h1 className="text-white text-lg font-semibold tracking-wide">Narrative Hospital</h1>
+          <h1 className="text-white text-lg font-semibold tracking-wide">Dialog Hospital</h1>
           <div className="h-6 w-px bg-blue-500"></div>
           <div className="flex gap-3 text-sm text-blue-100">
             <span className="hover:text-white cursor-pointer">ヘルプ(H)</span>
