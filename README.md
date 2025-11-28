@@ -1,6 +1,6 @@
 # Electronic Health Record System
 
-A commercial electronic health record (EHR) system built with Next.js, TypeScript, and Tailwind CSS. This application provides comprehensive patient management capabilities, allowing healthcare providers to view patient lists and access detailed medical records.
+An electronic health record (EHR) system built with Next.js, TypeScript, and Tailwind CSS. This application provides comprehensive patient management capabilities, allowing healthcare providers to view patient lists and access detailed medical records.
 
 ## Features
 
@@ -83,5 +83,17 @@ The backend API provides the following endpoints:
 - TypeScript
 - Tailwind CSS
 - JSON Server
+
+## Documentation
+
+Specification documents for each page and feature are available in the `docs/specifications/` directory. These documents provide detailed information about:
+- Page layouts and UI components
+- Data models and API contracts
+- Business rules and validation logic
+- User interactions and workflows
+
+For example:
+- `docs/specifications/pages/patient-list.md` - Patient list page specifications
+- `docs/specifications/pages/patient-detail.md` - Patient detail page specifications
 
 
