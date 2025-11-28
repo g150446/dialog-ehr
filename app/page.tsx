@@ -86,7 +86,6 @@ export default async function HomePage() {
               <th className="border border-gray-400 px-3 py-2.5 text-left w-14 text-gray-700 font-semibold">No.</th>
               <th className="border border-gray-400 px-3 py-2.5 text-left w-20 text-gray-700 font-semibold">部署</th>
               <th className="border border-gray-400 px-3 py-2.5 text-left w-20 text-gray-700 font-semibold">Bed</th>
-              <th className="border border-gray-400 px-3 py-2.5 text-left w-16 text-gray-700 font-semibold">特記</th>
               <th className="border border-gray-400 px-3 py-2.5 text-left w-24 text-gray-700 font-semibold">患者コード</th>
               <th className="border border-gray-400 px-3 py-2.5 text-left w-28 text-gray-700 font-semibold">氏名</th>
               <th className="border border-gray-400 px-3 py-2.5 text-left w-20 text-gray-700 font-semibold">年齢</th>
@@ -111,7 +110,6 @@ export default async function HomePage() {
                 <td className="border border-gray-300 px-3 py-2.5 bg-white text-gray-700">{index + 1}</td>
                 <td className="border border-gray-300 px-3 py-2.5 bg-white text-gray-700">{patient.department || '-'}</td>
                 <td className="border border-gray-300 px-3 py-2.5 bg-white text-gray-700">{patient.bed || '-'}</td>
-                <td className="border border-gray-300 px-3 py-2.5 bg-white text-gray-700">{patient.specialNotes || '-'}</td>
                 <td className="border border-gray-300 px-3 py-2.5 bg-white text-gray-700 font-mono text-xs">{patient.patientCode}</td>
                 <td className="border border-gray-300 px-3 py-2.5 bg-white">
                   <Link
@@ -190,11 +188,6 @@ export default async function HomePage() {
             {patient.admissionDiagnosis && (
               <div className="text-xs text-gray-700 mt-2 pt-2 border-t border-gray-200">
                 <span className="text-gray-500">入院時病名:</span> <span className="font-medium line-clamp-1">{patient.admissionDiagnosis}</span>
-              </div>
-            )}
-            {patient.specialNotes && (
-              <div className="text-xs text-red-600 mt-1 font-medium">
-                特記: {patient.specialNotes}
               </div>
             )}
           </Link>

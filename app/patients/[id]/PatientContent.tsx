@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Patient } from '@/types/patient';
+import { useState, useEffect } from 'react';
+import { Patient, MedicalRecord } from '@/types/patient';
 
 interface PatientContentProps {
   patient: Patient;
@@ -12,6 +12,31 @@ interface PatientContentProps {
 export default function PatientContent({ patient, age, bmi }: PatientContentProps) {
   const [activeView, setActiveView] = useState<'medical-records' | 'patient-info' | 'visit-history'>('medical-records');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [shouldUseTwoColumns, setShouldUseTwoColumns] = useState(false);
+  
+  // Form state for new medical record
+  const [newRecord, setNewRecord] = useState({
+    subjective: '',
+    objective: '',
+    assessment: '',
+    plan: '',
+    notes: ''
+  });
+
+  // Aspect ratio detection
+  useEffect(() => {
+    const checkLayout = () => {
+      if (typeof window !== 'undefined') {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        setShouldUseTwoColumns(width > height);
+      }
+    };
+    
+    checkLayout();
+    window.addEventListener('resize', checkLayout);
+    return () => window.removeEventListener('resize', checkLayout);
+  }, []);
 
   return (
     <>
@@ -350,10 +375,25 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
           )}
 
           {/* Medical Records Section */}
-          {activeView === 'medical-records' && patient.medicalRecords && patient.medicalRecords.length > 0 && (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
-              <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">診療録詳細</h3>
-              <div className="space-y-5">
+          {activeView === 'medical-records' && (
+            <div className={`${shouldUseTwoColumns ? 'flex gap-4' : ''}`}>
+              {/* Left Column: Summary + Past Records */}
+              <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
+                {/* Summary Section */}
+                {patient.summary && (
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm mb-4">
+                    <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリ</h3>
+                    <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+                      {patient.summary}
+                    </div>
+                  </div>
+                )}
+
+                {/* Past Medical Records */}
+                {patient.medicalRecords && patient.medicalRecords.length > 0 && (
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                    <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">診療録詳細</h3>
+                    <div className="space-y-5 max-h-[calc(100vh-400px)] overflow-y-auto">
                 {patient.medicalRecords
                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                   .map((record) => {
@@ -534,7 +574,129 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                       </div>
                     );
                   })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Show message if no records */}
+                {(!patient.medicalRecords || patient.medicalRecords.length === 0) && (
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                    <p className="text-xs md:text-sm text-gray-600">診療録がありません。</p>
+                  </div>
+                )}
               </div>
+
+              {/* Right Column: New Medical Record Input Form */}
+              {shouldUseTwoColumns && (
+                <div className="w-1/2">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                    <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">新規診療録入力</h3>
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      // Handle form submission
+                      console.log('New record:', newRecord);
+                      alert('診療録を保存しました（開発中）');
+                      setNewRecord({
+                        subjective: '',
+                        objective: '',
+                        assessment: '',
+                        plan: '',
+                        notes: ''
+                      });
+                    }} className="space-y-4">
+                      {/* S - Subjective */}
+                      <div>
+                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
+                          <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs mr-2">S</span>
+                          <span>Subjective (主観的情報)</span>
+                        </div>
+                        <textarea
+                          value={newRecord.subjective}
+                          onChange={(e) => setNewRecord({ ...newRecord, subjective: e.target.value })}
+                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-green-50 p-2 md:p-3 rounded border-l-4 border-green-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-y min-h-[80px]"
+                          placeholder="主観的情報を入力してください"
+                        />
+                      </div>
+
+                      {/* O - Objective */}
+                      <div>
+                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs mr-2">O</span>
+                          <span>Objective (客観的情報)</span>
+                        </div>
+                        <textarea
+                          value={newRecord.objective}
+                          onChange={(e) => setNewRecord({ ...newRecord, objective: e.target.value })}
+                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[80px]"
+                          placeholder="客観的情報を入力してください"
+                        />
+                      </div>
+
+                      {/* A - Assessment */}
+                      <div>
+                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
+                          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs mr-2">A</span>
+                          <span>Assessment (評価・診断)</span>
+                        </div>
+                        <textarea
+                          value={newRecord.assessment}
+                          onChange={(e) => setNewRecord({ ...newRecord, assessment: e.target.value })}
+                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-yellow-50 p-2 md:p-3 rounded border-l-4 border-yellow-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-y min-h-[80px]"
+                          placeholder="評価・診断を入力してください"
+                        />
+                      </div>
+
+                      {/* P - Plan */}
+                      <div>
+                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs mr-2">P</span>
+                          <span>Plan (治療計画)</span>
+                        </div>
+                        <textarea
+                          value={newRecord.plan}
+                          onChange={(e) => setNewRecord({ ...newRecord, plan: e.target.value })}
+                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-purple-50 p-2 md:p-3 rounded border-l-4 border-purple-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-y min-h-[80px]"
+                          placeholder="治療計画を入力してください"
+                        />
+                      </div>
+
+                      {/* Free Text Area */}
+                      <div>
+                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5">備考・その他</div>
+                        <textarea
+                          value={newRecord.notes}
+                          onChange={(e) => setNewRecord({ ...newRecord, notes: e.target.value })}
+                          className="w-full text-xs md:text-sm text-gray-800 bg-white p-2 md:p-3 rounded border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[100px]"
+                          placeholder="備考やその他の情報を自由に入力してください"
+                        />
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setNewRecord({
+                            subjective: '',
+                            objective: '',
+                            assessment: '',
+                            plan: '',
+                            notes: ''
+                          })}
+                          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs md:text-sm font-medium transition-colors"
+                        >
+                          クリア
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs md:text-sm font-medium transition-colors shadow-sm"
+                        >
+                          保存
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

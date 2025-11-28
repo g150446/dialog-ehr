@@ -58,6 +58,9 @@ export interface Patient {
   chiefComplaint?: string;
   smokingHistory?: string;
   drinkingHistory?: string;
+  
+  // Summary
+  summary?: string;
 }
 
 export interface Visit {
