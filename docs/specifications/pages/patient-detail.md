@@ -34,6 +34,7 @@ The Patient Detail Page provides a comprehensive view of an individual patient's
    - Handle patient not found scenarios (404)
 
 2. **Information Sections**
+   - **Summary**: Patient summary text with expand/collapse functionality (displayed in two-column layout)
    - **Basic Information**: Name, gender, date of birth, patient code, contact information
    - **Medical Information**: Height, weight, BMI, blood type, allergies, conditions, chief complaint, smoking history, drinking history
    - **Admission Information**: Department, bed, admission/discharge dates, diagnoses
@@ -100,11 +101,21 @@ The Patient Detail Page provides a comprehensive view of an individual patient's
    - Active button styling: White background with blue border (`bg-white border-2 border-blue-600`)
    - Inactive button styling: Gray background (`bg-gray-200 border border-gray-400`)
 
+8. **Summary Section Expand/Collapse**
+   - Summary section displays patient summary text when available
+   - Located in the left column of the two-column medical records layout
+   - Expand/collapse toggle button in the section header
+   - Default state: Expanded (summary content visible)
+   - Toggle button: Chevron icon that rotates when collapsed
+   - State managed client-side using React `useState` hook (`isSummaryExpanded`)
+   - Accessibility: ARIA labels in Japanese ("サマリを折りたたむ" / "サマリを展開")
+   - Smooth transitions for icon rotation and content visibility
+
 ## UI Layout
 
-### Two-Panel Layout
+### Layout Structure
 
-The page uses a two-panel horizontal layout:
+The page uses a responsive layout that adapts based on screen aspect ratio:
 
 1. **Left Sidebar** (Width: 256px / `w-64`)
    - Background: Gradient (`from-gray-100 to-gray-150`)
@@ -112,12 +123,18 @@ The page uses a two-panel horizontal layout:
    - Scrollable: Vertical scroll enabled
    - Padding: 12px (`p-3`)
    - Content: Record type navigation, filters, date navigation, favorite functions, and quick action buttons
+   - Mobile: Hidden by default, accessible via hamburger menu drawer
 
 2. **Center Content Panel** (Flex: 1 / `flex-1`)
    - Background: White
    - Scrollable: Vertical scroll enabled
    - Padding: 24px (`p-6`)
    - Content: Patient information sections
+   - **Two-Column Layout** (when `shouldUseTwoColumns` is true):
+     - Activated when screen width > height (landscape orientation)
+     - Left column (50% width): Summary section and past medical records
+     - Right column (50% width): New medical record input form
+     - Single column layout used when screen height > width (portrait orientation)
 
 ### Page Structure
 
@@ -153,26 +170,37 @@ Each information section follows a consistent design pattern:
 
 #### Section Details
 
-1. **基本情報 (Basic Information)**
+1. **サマリ (Summary)**
+   - Fields: Patient summary text (`patient.summary`)
+   - Layout: Full-width text block with expand/collapse functionality
+   - Display: Only shown in two-column layout (left column) when `shouldUseTwoColumns` is true
+   - Header: Flex container with title and toggle button
+   - Toggle Button: Chevron icon (down when expanded, up when collapsed)
+   - Default State: Expanded (content visible)
+   - Conditional: Only displays if `patient.summary` exists
+   - Styling: Gradient background (`from-gray-50 to-gray-100`), rounded corners, border, shadow
+   - Text Formatting: Preserves line breaks (`whitespace-pre-line`), small text size
+
+2. **基本情報 (Basic Information)**
    - Fields: Name (with kana), Gender, Date of Birth, Patient Code, Phone, Email, Address
    - Layout: Two-column grid, address spans full width
 
-2. **医療情報 (Medical Information)**
+3. **医療情報 (Medical Information)**
    - Fields: Height, Weight, BMI, Blood Type, Allergies, Conditions
    - Layout: Two-column grid, allergies and conditions span full width
    - Conditional: Only displays if relevant data exists
 
-3. **入院情報 (Admission Information)**
+4. **入院情報 (Admission Information)**
    - Fields: Department, Bed, Admission Date, Discharge Date, Admission Diagnosis, DPC Diagnosis
    - Layout: Two-column grid, diagnoses span full width
    - Conditional: Only displays if admission data exists
 
-4. **担当医情報 (Staff Information)**
+5. **担当医情報 (Staff Information)**
    - Fields: Ward Attending Physician, Resident, Attending Physician A
    - Layout: Two-column grid
    - Conditional: Only displays if staff data exists
 
-5. **来院履歴 (Visit History)**
+6. **来院履歴 (Visit History)**
    - Display: Chronological list of visits
    - Each visit card: Left border (`border-l-4 border-blue-600`), white background, padding, shadow
    - Visit details: Date, Department, Diagnosis, Physician, Notes
@@ -245,6 +273,9 @@ interface Patient {
   chiefComplaint?: string;
   smokingHistory?: string;
   drinkingHistory?: string;
+  
+  // Summary
+  summary?: string;                          // Patient summary text, displayed in expandable section
 }
 
 export interface Visit {
@@ -300,6 +331,7 @@ export interface MedicalRecord {
 ### Data Display Mapping
 
 - **Info Bar**: name, gender, dateOfBirth, age (calculated), height, weight, BMI (calculated), patientCode, medicalRecordNumber
+- **Summary Section**: summary (displayed in expandable section, only in two-column layout)
 - **Basic Info Section**: name, nameKana, gender, dateOfBirth, age (calculated), patientCode, phone, email, address
 - **Medical Info Section**: height, weight, BMI (calculated), bloodType, allergies, conditions, chiefComplaint, smokingHistory, drinkingHistory
 - **Admission Info Section**: department, bed, admissionDate, dischargeDate, admissionDiagnosis, dpcDiagnosis
@@ -465,6 +497,11 @@ const bmi = patient.height && patient.weight
 - Default view on page load: `'medical-records'`
 
 **Section-Specific Rules**:
+- **Summary Section**: Only displays when `activeView === 'medical-records'`, `shouldUseTwoColumns` is true, and `patient.summary` exists
+  - Located in the left column of the two-column layout
+  - Expand/collapse state managed by `isSummaryExpanded` state variable
+  - Default state: Expanded (true)
+  - Content conditionally rendered based on `isSummaryExpanded` state
 - **Patient Information Section**: Only displays when `activeView === 'patient-info'`
   - **Admission Information**: Only displays if `admissionDate` or `department` exists
   - **Staff Information**: Only displays if `wardAttendingPhysician` or `attendingPhysicianA` exists
@@ -490,6 +527,13 @@ const bmi = patient.height && patient.weight
 ### Medical Records Display
 
 **Rules**:
+- Layout adapts based on screen aspect ratio:
+  - **Two-Column Layout** (landscape): Activated when `shouldUseTwoColumns` is true (width > height)
+    - Left column: Summary section (expandable) and past medical records
+    - Right column: New medical record input form
+  - **Single-Column Layout** (portrait): Used when height > width
+    - Summary section not displayed
+    - Medical records and form displayed in single column
 - Display medical records sorted by date (newest first)
 - Each record displays in SOAP format with color-coded sections:
   - **S (Subjective)**: Green background (`bg-green-50`), green left border (`border-green-500`)
@@ -573,15 +617,25 @@ The `not-found.tsx` component handles patient not found scenarios:
    - Buttons use semantic `<button>` elements
    - Proper button labels in Japanese
 
+### Accessibility Features
+
+1. **ARIA Labels**: 
+   - Summary expand/collapse button includes `aria-label` with Japanese text ("サマリを折りたたむ" / "サマリを展開")
+   - Summary expand/collapse button includes `aria-expanded` attribute indicating current state
+   - Mobile menu buttons include `aria-label` attributes
+2. **Keyboard Navigation**: 
+   - All buttons are keyboard accessible
+   - Summary toggle button can be activated via keyboard
+3. **Semantic HTML**: Proper use of semantic elements for structure
+
 ### Accessibility Improvements (Future)
 
-1. **ARIA Labels**: Add aria-labels to buttons and interactive elements
-2. **Keyboard Navigation**: Ensure all interactive elements are keyboard accessible
-3. **Screen Reader Support**: Add aria-live regions for dynamic content
-4. **Focus Management**: Proper focus indicators on interactive elements
-5. **Color Contrast**: Ensure sufficient contrast for all text elements
-6. **Alt Text**: Add alt text for gender icons (currently decorative)
-7. **Skip Links**: Add skip navigation links for main content
+1. **Screen Reader Support**: Add aria-live regions for dynamic content
+2. **Focus Management**: Proper focus indicators on interactive elements
+3. **Color Contrast**: Ensure sufficient contrast for all text elements
+4. **Alt Text**: Add alt text for gender icons (currently decorative)
+5. **Skip Links**: Add skip navigation links for main content
+6. **Keyboard Shortcuts**: Document and implement keyboard shortcuts for common actions
 
 ## Performance Considerations
 
@@ -595,9 +649,11 @@ The `not-found.tsx` component handles patient not found scenarios:
 2. **Rendering**
    - Conditional rendering reduces DOM size - only active view section is rendered
    - View state managed client-side using React useState hook
+   - Summary expand/collapse state managed client-side (`isSummaryExpanded`)
+   - Two-column layout dynamically determined based on screen aspect ratio (`shouldUseTwoColumns`)
    - Efficient React rendering with proper keys for visit lists and medical records
    - Fixed height layout prevents layout shifts
-   - Client component handles only view switching (no data fetching)
+   - Client component handles only view switching and UI state (no data fetching)
 
 3. **Calculations**
    - Age and BMI calculated on server side
@@ -660,6 +716,8 @@ The `not-found.tsx` component handles patient not found scenarios:
    - Sidebar buttons render correctly (functionality future)
    - Action buttons render correctly (functionality future)
    - Navigation works correctly
+   - Summary expand/collapse toggle works correctly
+   - Two-column layout adapts correctly to screen orientation
 
 ## Future Enhancements
 
@@ -681,6 +739,8 @@ The `not-found.tsx` component handles patient not found scenarios:
    - Improve status badge to be dynamic
    - Add patient photo display
    - Add timeline view for visit history
+   - Add smooth height transition animation for summary expand/collapse
+   - Consider adding expand/collapse to other sections (medical records, visit history)
 
 3. **Data**
    - Add more detailed medical history
