@@ -13,6 +13,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
   const [activeView, setActiveView] = useState<'medical-records' | 'patient-info' | 'visit-history'>('medical-records');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [shouldUseTwoColumns, setShouldUseTwoColumns] = useState(false);
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
   
   // Form state for new medical record
   const [newRecord, setNewRecord] = useState({
@@ -383,10 +384,29 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                   {/* Summary Section */}
                   {patient.summary && (
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm mb-4">
-                      <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリ</h3>
-                      <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-                        {patient.summary}
+                      <div className="flex items-center justify-between border-b border-gray-400 pb-1 mb-3 md:mb-4">
+                        <h3 className="font-bold text-xs md:text-sm text-gray-800">サマリ</h3>
+                        <button
+                          onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                          className="text-gray-600 hover:text-gray-800 transition-colors p-1 rounded hover:bg-gray-200"
+                          aria-label={isSummaryExpanded ? 'サマリを折りたたむ' : 'サマリを展開'}
+                          aria-expanded={isSummaryExpanded}
+                        >
+                          <svg 
+                            className={`w-4 h-4 transition-transform ${isSummaryExpanded ? '' : 'rotate-180'}`}
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
                       </div>
+                      {isSummaryExpanded && (
+                        <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+                          {patient.summary}
+                        </div>
+                      )}
                     </div>
                   )}
 
