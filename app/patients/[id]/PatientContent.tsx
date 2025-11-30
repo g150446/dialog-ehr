@@ -10,7 +10,7 @@ interface PatientContentProps {
 }
 
 export default function PatientContent({ patient, age, bmi }: PatientContentProps) {
-  const [activeView, setActiveView] = useState<'medical-records' | 'patient-info' | 'visit-history'>('medical-records');
+  const [activeView, setActiveView] = useState<'medical-records' | 'patient-info' | 'visit-history' | 'summary'>('medical-records');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [shouldUseTwoColumns, setShouldUseTwoColumns] = useState(false);
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
@@ -24,6 +24,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     plan: '',
     notes: ''
   });
+
+  // State for summary input (questions/updates)
+  const [summaryInput, setSummaryInput] = useState('');
 
   // Aspect ratio detection
   useEffect(() => {
@@ -39,6 +42,32 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     window.addEventListener('resize', checkLayout);
     return () => window.removeEventListener('resize', checkLayout);
   }, []);
+
+  // Export medical records to JSON file
+  const handleExportMedicalRecords = () => {
+    if (!patient.medicalRecords || patient.medicalRecords.length === 0) {
+      return;
+    }
+
+    // Create JSON data with proper formatting
+    const jsonData = JSON.stringify(patient.medicalRecords, null, 2);
+    
+    // Create blob and download
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Use patient name for filename (sanitize for filesystem - preserve Japanese characters)
+    // Replace spaces with underscores, remove only problematic filesystem characters
+    const sanitizedName = patient.name.replace(/\s+/g, '_').replace(/[<>:"/\\|?*]/g, '');
+    link.download = `${sanitizedName}-medical-records.json`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <>
@@ -107,6 +136,20 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
             >
               過去診療録
             </button>
+            <button
+              onClick={() => {
+                setActiveView('summary');
+                setShowPastRecordsOnly(false);
+                setIsDrawerOpen(false);
+              }}
+              className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
+                activeView === 'summary'
+                  ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
+                  : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              サマリ
+            </button>
             <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
               カレンダー
             </button>
@@ -145,6 +188,21 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
             >
               来院履歴
             </button>
+            <button
+              onClick={() => {
+                if (showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0) {
+                  handleExportMedicalRecords();
+                }
+              }}
+              disabled={!showPastRecordsOnly || !patient.medicalRecords || patient.medicalRecords.length === 0}
+              className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
+                showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0
+                  ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
+                  : 'bg-gray-200 border border-gray-400 text-gray-700 opacity-50 cursor-not-allowed'
+              }`}
+            >
+              エクスポート
+            </button>
           </div>
 
           <div className="mt-5 pt-3 border-t border-gray-400">
@@ -182,8 +240,8 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
       </div>
 
       {/* Central Panel - Record Details */}
-      <div className={`flex-1 bg-white ${showPastRecordsOnly ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'} ${showPastRecordsOnly ? 'p-0' : 'p-3 md:p-6'}`}>
-        <div className={showPastRecordsOnly ? 'flex-1 flex flex-col min-h-0' : 'mb-4 p-3 md:p-6'}>
+      <div className={`flex-1 bg-white ${showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'} ${showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'p-0' : 'p-3 md:p-6'}`}>
+        <div className={showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'flex-1 flex flex-col min-h-0' : activeView === 'summary' && shouldUseTwoColumns ? 'p-3 md:p-6' : 'mb-4 p-3 md:p-6'}>
           {/* Patient Information Section */}
           {activeView === 'patient-info' && (
             <>
@@ -388,6 +446,117 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Summary View Section */}
+          {activeView === 'summary' && (
+            <div className={shouldUseTwoColumns ? 'flex gap-4' : 'flex flex-col flex-1 min-h-0'}>
+              {/* Landscape Mode: Two Columns */}
+              {shouldUseTwoColumns ? (
+                <>
+                  {/* Left Column: Summary */}
+                  <div className="w-1/2 overflow-y-auto">
+                    {patient.summary ? (
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                        <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリ</h3>
+                        <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+                          {patient.summary}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                        <p className="text-xs md:text-sm text-gray-600">サマリがありません。</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: Input Form */}
+                  <div className="w-1/2 overflow-y-auto">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                      <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリへの質問または更新</h3>
+                      <div className="space-y-4">
+                        <textarea
+                          value={summaryInput}
+                          onChange={(e) => setSummaryInput(e.target.value)}
+                          className="w-full text-xs md:text-sm text-gray-800 bg-white p-2 md:p-3 rounded border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[200px]"
+                          placeholder="質問または更新内容を入力してください"
+                        />
+                        <div className="flex justify-end gap-2 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => {}}
+                            disabled
+                            className="px-4 py-2 bg-gray-200 text-gray-500 rounded text-xs md:text-sm font-medium transition-colors cursor-not-allowed opacity-50"
+                          >
+                            質問
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {}}
+                            disabled
+                            className="px-4 py-2 bg-gray-200 text-gray-500 rounded text-xs md:text-sm font-medium transition-colors cursor-not-allowed opacity-50"
+                          >
+                            更新
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Portrait Mode: Two Scrollable Areas */
+                <>
+                  {/* Upper Area: Summary */}
+                  <div className="flex-1 overflow-y-auto min-h-0 mb-2">
+                    {patient.summary ? (
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                        <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリ</h3>
+                        <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
+                          {patient.summary}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                        <p className="text-xs md:text-sm text-gray-600">サマリがありません。</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lower Area: Input Form */}
+                  <div className="flex-1 overflow-y-auto min-h-0">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                      <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリへの質問または更新</h3>
+                      <div className="space-y-4">
+                        <textarea
+                          value={summaryInput}
+                          onChange={(e) => setSummaryInput(e.target.value)}
+                          className="w-full text-xs md:text-sm text-gray-800 bg-white p-2 md:p-3 rounded border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[200px]"
+                          placeholder="質問または更新内容を入力してください"
+                        />
+                        <div className="flex justify-end gap-2 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => {}}
+                            disabled
+                            className="px-4 py-2 bg-gray-200 text-gray-500 rounded text-xs md:text-sm font-medium transition-colors cursor-not-allowed opacity-50"
+                          >
+                            質問
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {}}
+                            disabled
+                            className="px-4 py-2 bg-gray-200 text-gray-500 rounded text-xs md:text-sm font-medium transition-colors cursor-not-allowed opacity-50"
+                          >
+                            更新
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
