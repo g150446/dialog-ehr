@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id                    String   @id @default(uuid())
+  patientCode           String   @unique
+  name                  String
+  nameKana              String?
+  gender                String   // '男' | '女' | 'Male' | 'Female'
+  dateOfBirth           String
+  age                   Int
+  medicalRecordNumber   String
+  
+  // Contact Information
+  phone                 String?
+  email                 String?
+  address               String?
+  
+  // Medical Information
+  bloodType             String?
+  allergies             Json?    // string[]
+  conditions            Json?    // string[]
+  height                Float?   // cm
+  weight                Float?   // kg
+  bmi                   Float?
+  
+  // Admission Information
+  department            String?
+  bed                   String?
+  admissionDate         String?
+  dischargeDate         String?
+  admissionDiagnosis    String?
+  dpcDiagnosis          String?
+  dpcPeriod             String?
+  
+  // Staff Information
+  wardAttendingPhysician    String?
+  resident                 String?
+  attendingPhysicianA      String?
+  attendingPhysicianB      String?
+  outpatientAttendingPhysician String?
+  attendingNS              String?
+  
+  // Status and Flags
+  specialNotes          String?  @db.Text
+  status                String?
+  plan                  Boolean? @default(false)
+  nutrition             String?
+  path                  Boolean? @default(false)
+  clinicalPath          Boolean? @default(false)
+  nst                   Boolean? @default(false)
+  rst                   Boolean? @default(false)
+  
+  // Additional Medical Information
+  chiefComplaint        String?  @db.Text
+  smokingHistory        String?  @db.Text
+  drinkingHistory       String?  @db.Text
+  
+  // Summary
+  summary               String?  @db.Text
+  
+  // Relations
+  visits                Visit[]
+  medicalRecords        MedicalRecord[]
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@index([patientCode])
+  @@index([medicalRecordNumber])
+  @@map("patients")
+}
+
+model Visit {
+  id          String   @id @default(uuid())
+  patientId   String
+  visitId     String   // Original ID from JSON for reference
+  date        String
+  department  String
+  type        String   // '外来' | '入院' | 'Outpatient' | 'Inpatient'
+  diagnosis   String?
+  notes       String?  @db.Text
+  physician   String?
+  
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([patientId])
+  @@index([date])
+  @@map("visits")
+}
+
+model MedicalRecord {
+  id                String   @id @default(uuid())
+  patientId         String
+  recordId          String   // Original ID from JSON for reference
+  date              String
+  type              String   // '初診' | '再診' | '外来受診' | '入院診療録'
+  visitType         String?  // '外来' | '入院'
+  dayOfStay         Int?
+  
+  // Progress note (unified SOAP format)
+  progressNote      String?  @db.Text
+  
+  // Additional fields stored as JSON
+  vitalSigns        Json?    // { temperature?, bloodPressure?, heartRate?, spO2?, oxygenFlow? }
+  laboratoryResults Json?    // { [key: string]: string | number }
+  imagingResults    String?  @db.Text
+  
+  medications       Json?    // { name: string, dosage: string, frequency: string, duration?: string }[]
+  
+  physician         String?
+  notes             String?  @db.Text
+  
+  patient           Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([patientId])
+  @@index([date])
+  @@map("medical_records")
+}
