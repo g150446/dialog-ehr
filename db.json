@@ -64,10 +64,7 @@
           "date": "2023-10-10",
           "type": "初診",
           "visitType": "外来",
-          "subjective": "転居に伴う受診。\n「前の先生のところでは、ワクチンなどは言われるがままに打っていたが、詳しくは覚えていない」とのこと。お薬手帳と接種済証（一部）を確認。",
-          "objective": "BP 132/76, HR 72.\n\n[Physical Exam - DM/Complication Assessment]\n\n* Foot: 異常なし。 Neuro: 異常なし。\n\n[Vaccination History Check]\n\n* **COVID-19:** 6回目まで終了（最終：2023年5月）。**今回(XBB対応)未接種。**\n* **Influenza:** 今シーズン **未接種**。\n* **Pneumococcal (肺炎球菌):** 23価(ニューモバックス)を5年以上前に1回接種歴ありとの記憶（自治体の助成用紙確認必要）。13/15価は未接種。\n* **Herpes Zoster (帯状疱疹):** **未接種**（罹患歴不明）。\n* **RSV (RSウイルス):** **未接種**。\n\n[Labs/Screening]\n* HbA1c, Lipid, U-Alb/Cr, Vit B12, HBsAg等オーダー。",
-          "assessment": "1. 2型糖尿病・高血圧症：Status Quo.\n2. **Health Maintenance (予防接種):**\n   * **COVID-19 & Flu:** 秋冬の流行期に向け推奨。\n   * **Pneumococcal:** 80歳ハイリスク。前回の23価から5年以上経過していれば再接種または結合型ワクチン(13/15価)の検討余地あり。\n   * **Shingles & RSV:** 年齢的に推奨度高い。特にRSVは糖尿病患者で重症化リスクあり。",
-          "plan": "処方Do (Metformin, Azilva)。眼科紹介。\n\n**[Vaccine Recommendations]**\n1. **COVID-19 (XBB.1.5) & Influenza:** 同時接種可能であることを説明。来週以降で予約案内。\n2. **Pneumococcal:** 自治体助成の有無を確認後、接種計画を立てる。\n3. **Shingles & RSV:** 帯状疱疹ワクチン（シングリックス等）、RSVワクチン（アレックスビー）のパンフレット渡し、費用と効果を説明。導入検討してもらう。",
+          "progressNote": "S) 転居に伴う受診。\n「前の先生のところでは、ワクチンなどは言われるがままに打っていたが、詳しくは覚えていない」とのこと。お薬手帳と接種済証（一部）を確認。\nO) BP 132/76, HR 72.\n\n[Physical Exam - DM/Complication Assessment]\n\n* Foot: 異常なし。 Neuro: 異常なし。\n\n[Vaccination History Check]\n\n* **COVID-19:** 6回目まで終了（最終：2023年5月）。**今回(XBB対応)未接種。**\n* **Influenza:** 今シーズン **未接種**。\n* **Pneumococcal (肺炎球菌):** 23価(ニューモバックス)を5年以上前に1回接種歴ありとの記憶（自治体の助成用紙確認必要）。13/15価は未接種。\n* **Herpes Zoster (帯状疱疹):** **未接種**（罹患歴不明）。\n* **RSV (RSウイルス):** **未接種**。\n\n[Labs/Screening]\n* HbA1c, Lipid, U-Alb/Cr, Vit B12, HBsAg等オーダー。\nA) 1. 2型糖尿病・高血圧症：Status Quo.\n2. **Health Maintenance (予防接種):**\n   * **COVID-19 & Flu:** 秋冬の流行期に向け推奨。\n   * **Pneumococcal:** 80歳ハイリスク。前回の23価から5年以上経過していれば再接種または結合型ワクチン(13/15価)の検討余地あり。\n   * **Shingles & RSV:** 年齢的に推奨度高い。特にRSVは糖尿病患者で重症化リスクあり。\nP) 処方Do (Metformin, Azilva)。眼科紹介。\n\n**[Vaccine Recommendations]**\n1. **COVID-19 (XBB.1.5) & Influenza:** 同時接種可能であることを説明。来週以降で予約案内。\n2. **Pneumococcal:** 自治体助成の有無を確認後、接種計画を立てる。\n3. **Shingles & RSV:** 帯状疱疹ワクチン（シングリックス等）、RSVワクチン（アレックスビー）のパンフレット渡し、費用と効果を説明。導入検討してもらう。",
           "vitalSigns": {
             "bloodPressure": "132/76",
             "heartRate": "72",
@@ -94,10 +91,7 @@
           "date": "2023-10-24",
           "type": "再診",
           "visitType": "外来",
-          "subjective": "「インフルエンザとコロナのワクチンは来週、集団接種会場で打つ予約をした」\n帯状疱疹とRSウイルスは「費用もかかるので、少し考えさせてほしい」とのこと。",
-          "objective": "Labs: HbA1c 6.8%, HBsAg(+), U-Alb/Cr 18 (正常).\nHBV精査へ。",
-          "assessment": "予防接種：当面の呼吸器感染症対策（Flu/Covid）は手配済み。\nHBVキャリア判明、精査プラン通り。",
-          "plan": "処方Do。HBV-DNA, エコー実施。",
+          "progressNote": "S) 「インフルエンザとコロナのワクチンは来週、集団接種会場で打つ予約をした」\n帯状疱疹とRSウイルスは「費用もかかるので、少し考えさせてほしい」とのこと。\nO) Labs: HbA1c 6.8%, HBsAg(+), U-Alb/Cr 18 (正常).\nHBV精査へ。\nA) 予防接種：当面の呼吸器感染症対策（Flu/Covid）は手配済み。\nHBVキャリア判明、精査プラン通り。\nP) 処方Do。HBV-DNA, エコー実施。",
           "vitalSigns": {
             "bloodPressure": "128/70",
             "heartRate": "68"
@@ -120,10 +114,7 @@
           "date": "2024-01-23",
           "type": "再診",
           "visitType": "外来",
-          "subjective": "年末にインフルエンザもコロナも接種済み。副反応は腕が痛いくらいだった。\n眼科受診済み（網膜症なし）。",
-          "objective": "HBV-DNA 3.5 Log, エコー肝硬変なし。",
-          "assessment": "非活動性HBVキャリア。DM安定。\nワクチン接種完了（Flu/Covid）。",
-          "plan": "処方Do。",
+          "progressNote": "S) 年末にインフルエンザもコロナも接種済み。副反応は腕が痛いくらいだった。\n眼科受診済み（網膜症なし）。\nO) HBV-DNA 3.5 Log, エコー肝硬変なし。\nA) 非活動性HBVキャリア。DM安定。\nワクチン接種完了（Flu/Covid）。\nP) 処方Do。",
           "vitalSigns": {
             "bloodPressure": "130/78"
           },
@@ -141,10 +132,7 @@
           "date": "2024-04-23",
           "type": "再診",
           "visitType": "外来",
-          "subjective": "特変なし。",
-          "objective": "BP 128/72.\n本日の採血：HbA1c 6.9%, AST 26, ALT 24.\n肝機能悪化なし。",
-          "assessment": "状態安定。",
-          "plan": "処方Do。夏場に向け脱水注意指導。",
+          "progressNote": "S) 特変なし。\nO) BP 128/72.\n本日の採血：HbA1c 6.9%, AST 26, ALT 24.\n肝機能悪化なし。\nA) 状態安定。\nP) 処方Do。夏場に向け脱水注意指導。",
           "vitalSigns": {
             "bloodPressure": "128/72"
           },
@@ -160,10 +148,7 @@
           "date": "2024-07-23",
           "type": "再診",
           "visitType": "外来",
-          "subjective": "「友人が帯状疱疹になって大変そうだった」\n帯状疱疹ワクチンの接種を希望される。",
-          "objective": "足白癬なし。",
-          "assessment": "帯状疱疹予防。シングリックス（不活化）を選択。",
-          "plan": "処方Do。\n**Vaccine:** シングリックス 1回目接種予約（次回外来とずらして看護師外来で対応など調整）。",
+          "progressNote": "S) 「友人が帯状疱疹になって大変そうだった」\n帯状疱疹ワクチンの接種を希望される。\nO) 足白癬なし。\nA) 帯状疱疹予防。シングリックス（不活化）を選択。\nP) 処方Do。\n**Vaccine:** シングリックス 1回目接種予約（次回外来とずらして看護師外来で対応など調整）。",
           "vitalSigns": {
             "bloodPressure": "124/68"
           },
@@ -174,10 +159,7 @@
           "date": "2024-10-22",
           "type": "再診",
           "visitType": "外来",
-          "subjective": "体調良好。帯状疱疹ワクチンは2回済み（9月完了）。\n「今年もインフルエンザの時期ですね」",
-          "objective": "BP 134/76.\n\n[Annual Assessment]\n\n* Foot/Neuro: 異常なし。\n* Labs: HbA1c 7.0%, Vit B12正常。\n* HBV: エコー著変なし。",
-          "assessment": "1. DM/HT/HBV: 安定。\n2. **Health Maintenance (予防接種):**\n   * **Influenza:** シーズン到来。接種推奨。\n   * **COVID-19:** 定期接種（年1回）の対象。同時接種推奨。\n   * **Pneumococcal:** 昨年保留のまま。次回以降再検討。",
-          "plan": "処方Do。\n\n**[Vaccine Recommendations]**\n* **Influenza & COVID-19:** 本日接種希望なし（後日かかりつけ医等で受けるか、当院で予約するか確認）。→ **来月の通院枠外で予約取得。**\n* 肺炎球菌ワクチンについて再パンフレット渡し。",
+          "progressNote": "S) 体調良好。帯状疱疹ワクチンは2回済み（9月完了）。\n「今年もインフルエンザの時期ですね」\nO) BP 134/76.\n\n[Annual Assessment]\n\n* Foot/Neuro: 異常なし。\n* Labs: HbA1c 7.0%, Vit B12正常。\n* HBV: エコー著変なし。\nA) 1. DM/HT/HBV: 安定。\n2. **Health Maintenance (予防接種):**\n   * **Influenza:** シーズン到来。接種推奨。\n   * **COVID-19:** 定期接種（年1回）の対象。同時接種推奨。\n   * **Pneumococcal:** 昨年保留のまま。次回以降再検討。\nP) 処方Do。\n\n**[Vaccine Recommendations]**\n* **Influenza & COVID-19:** 本日接種希望なし（後日かかりつけ医等で受けるか、当院で予約するか確認）。→ **来月の通院枠外で予約取得。**\n* 肺炎球菌ワクチンについて再パンフレット渡し。",
           "vitalSigns": {
             "bloodPressure": "134/76"
           },
@@ -194,10 +176,7 @@
           "date": "2025-01-21",
           "type": "再診",
           "visitType": "外来",
-          "subjective": "「11月にインフルとコロナのワクチンは打ちました」\n正月太りあり。",
-          "objective": "体重+2kg. HbA1c 7.1%.\nU-Alb/Cr 22.",
-          "assessment": "冬期ワクチン完了。\nDM軽度悪化（季節性）。",
-          "plan": "食事指導。処方Do。",
+          "progressNote": "S) 「11月にインフルとコロナのワクチンは打ちました」\n正月太りあり。\nO) 体重+2kg. HbA1c 7.1%.\nU-Alb/Cr 22.\nA) 冬期ワクチン完了。\nDM軽度悪化（季節性）。\nP) 食事指導。処方Do。",
           "vitalSigns": {
             "bloodPressure": "138/80"
           },
@@ -216,10 +195,7 @@
           "date": "2025-04-22",
           "type": "再診",
           "visitType": "外来",
-          "subjective": "体重戻った。体調良好。",
-          "objective": "BP 130/70.\n採血：HbA1c 6.8%, ALT 22.",
-          "assessment": "コントロール良好。",
-          "plan": "処方Do。",
+          "progressNote": "S) 体重戻った。体調良好。\nO) BP 130/70.\n採血：HbA1c 6.8%, ALT 22.\nA) コントロール良好。\nP) 処方Do。",
           "vitalSigns": {
             "bloodPressure": "130/70"
           },
@@ -234,10 +210,7 @@
           "date": "2025-07-22",
           "type": "再診",
           "visitType": "外来",
-          "subjective": "特変なし。",
-          "objective": "HbA1c 6.8%.",
-          "assessment": "安定。",
-          "plan": "処方Do。RSVワクチンは依然「高いから様子見」で保留中。",
+          "progressNote": "S) 特変なし。\nO) HbA1c 6.8%.\nA) 安定。\nP) 処方Do。RSVワクチンは依然「高いから様子見」で保留中。",
           "vitalSigns": {
             "bloodPressure": "126/74"
           },
@@ -248,10 +221,7 @@
           "date": "2025-10-21",
           "type": "再診",
           "visitType": "外来",
-          "subjective": "少し足先が冷える。\n今年もワクチンの案内が来ている。",
-          "objective": "[Annual Assessment]\n\n* Foot/Neuro: 異常なし。\n* Labs: HbA1c 6.9%, Vit B12正常。",
-          "assessment": "全身状態安定。\n今年もFlu/Covidの定期接種時期。",
-          "plan": "処方Do。\n**Vaccine:** インフルエンザ、COVID-19ワクチンの予診票確認。**来月接種予定とする。**",
+          "progressNote": "S) 少し足先が冷える。\n今年もワクチンの案内が来ている。\nO) [Annual Assessment]\n\n* Foot/Neuro: 異常なし。\n* Labs: HbA1c 6.9%, Vit B12正常。\nA) 全身状態安定。\n今年もFlu/Covidの定期接種時期。\nP) 処方Do。\n**Vaccine:** インフルエンザ、COVID-19ワクチンの予診票確認。**来月接種予定とする。**",
           "vitalSigns": {
             "bloodPressure": "132/78"
           },
@@ -265,10 +235,7 @@
           "date": "2025-11-27",
           "type": "外来受診",
           "visitType": "外来",
-          "subjective": "発熱、咳嗽、呼吸困難。\n「来週ワクチンを打つ予定だったのに、その前に熱が出てしまった」",
-          "objective": "Vital: BT 38.5℃, BP 110/60, HR 102 reg, SpO2 91%(RA) / 94%(N2L).\nGen: 急性病容、努力呼吸あり。\nChest: 右肺野にCoarse crackles聴取。\nExt: 下腿浮腫(-)\nLabs:\n• WBC 14,800, Neut 88%, CRP 12.5.\n• BUN 28, Cre 1.10 (脱水疑い).\n• HbA1c 7.1%. AST 45, ALT 38 (軽度上昇).\n• COVID-19 Ag(-), Flu Ag(-).\nCXR/CT: 右中下葉に浸潤影およびすりガラス影あり。\n\n入院時スクリーニングとして、先月(10/21)の採血結果を確認。\n* HbA1c 6.9%\n* **Vit B12**: 380 pg/mL (低下傾向だが欠乏域ではない。Metformin継続可と判断していた)\n* **U-Alb/Cr**: 28 mg/gCr (正常高値。感染契機で微量アルブミン尿が出る可能性あり留意)",
-          "assessment": "1. **細菌性肺炎** (市中肺炎)\n   • ワクチン（Flu/Covid）は今シーズン未接種の状態での発症だが、抗原検査陰性であり細菌性を疑う。\n   • 肺炎球菌ワクチンは未接種（or 5年以上前）の状態。\n   • A-DROPスコア：Age(男70歳以上)=1, Dehydration(BUN21以上)=1, Respiration(SpO2 90以下ではないが低い)=0, Orientation=0, Pressure(sBP 90以下ではない)=0.\n   • スコア2点だが、80歳高齢、DM基礎疾患あり、SpO2低下顕著のため入院加療が望ましいと判断。\n2. 脱水症\n3. 2型糖尿病、B型肝炎キャリア（肝機能軽度上昇は感染に伴うものか要観察）",
-          "plan": "肺炎治療開始。MetforminはSick day対応で中止。\n酸素投与開始。\n抗生剤：ABPC/SBT 3g 1日2回 点滴静注で開始。\n補液：細胞外液 1000ml/日〜。\nインスリンスライディングスケール対応とする。\n退院後、体調回復を待って肺炎球菌ワクチン（PCV15等）の接種を強く推奨する方針とする。",
+          "progressNote": "S) 発熱、咳嗽、呼吸困難。\n「来週ワクチンを打つ予定だったのに、その前に熱が出てしまった」\nO) Vital: BT 38.5℃, BP 110/60, HR 102 reg, SpO2 91%(RA) / 94%(N2L).\nGen: 急性病容、努力呼吸あり。\nChest: 右肺野にCoarse crackles聴取。\nExt: 下腿浮腫(-)\nLabs:\n• WBC 14,800, Neut 88%, CRP 12.5.\n• BUN 28, Cre 1.10 (脱水疑い).\n• HbA1c 7.1%. AST 45, ALT 38 (軽度上昇).\n• COVID-19 Ag(-), Flu Ag(-).\nCXR/CT: 右中下葉に浸潤影およびすりガラス影あり。\n\n入院時スクリーニングとして、先月(10/21)の採血結果を確認。\n* HbA1c 6.9%\n* **Vit B12**: 380 pg/mL (低下傾向だが欠乏域ではない。Metformin継続可と判断していた)\n* **U-Alb/Cr**: 28 mg/gCr (正常高値。感染契機で微量アルブミン尿が出る可能性あり留意)\nA) 1. **細菌性肺炎** (市中肺炎)\n   • ワクチン（Flu/Covid）は今シーズン未接種の状態での発症だが、抗原検査陰性であり細菌性を疑う。\n   • 肺炎球菌ワクチンは未接種（or 5年以上前）の状態。\n   • A-DROPスコア：Age(男70歳以上)=1, Dehydration(BUN21以上)=1, Respiration(SpO2 90以下ではないが低い)=0, Orientation=0, Pressure(sBP 90以下ではない)=0.\n   • スコア2点だが、80歳高齢、DM基礎疾患あり、SpO2低下顕著のため入院加療が望ましいと判断。\n2. 脱水症\n3. 2型糖尿病、B型肝炎キャリア（肝機能軽度上昇は感染に伴うものか要観察）\nP) 肺炎治療開始。MetforminはSick day対応で中止。\n酸素投与開始。\n抗生剤：ABPC/SBT 3g 1日2回 点滴静注で開始。\n補液：細胞外液 1000ml/日〜。\nインスリンスライディングスケール対応とする。\n退院後、体調回復を待って肺炎球菌ワクチン（PCV15等）の接種を強く推奨する方針とする。",
           "vitalSigns": {
             "temperature": "38.5℃",
             "bloodPressure": "110/60",
@@ -305,10 +272,7 @@
           "type": "入院診療録",
           "visitType": "入院",
           "dayOfStay": 2,
-          "subjective": "「昨日より少し息が楽になった気がする。痰が出にくい」\n夜間は眠れた様子。",
-          "objective": "Vital: BT 37.4℃, BP 124/70, HR 88, SpO2 96%(N2L).\nChest: 右肺野 Crackles 依然著明だが、Air入りは悪くない。\nIn/Out: 補液+飲水で1500ml / 尿量 1200ml (利尿ついている)。\n食事: 糖尿病食（軟菜）5割摂取。\n血糖: 朝食前 158.",
-          "assessment": "肺炎治療2日目。解熱傾向あり、酸素化改善傾向。\n脱水は補正されつつある。\nB型肝炎については、化学療法や免疫抑制療法を行うわけではないが、高齢者の重症感染症であり、入院中の再活性化（de novo含む）念のため注意。現時点では抗ウイルス薬不要、経過観察継続。",
-          "plan": "抗生剤継続（ABPC/SBT）。\n酸素2L継続、SPO2安定すれば減量トライ。\nリハビリ介入依頼（廃用予防）。\nメトホルミン休薬継続。",
+          "progressNote": "S) 「昨日より少し息が楽になった気がする。痰が出にくい」\n夜間は眠れた様子。\nO) Vital: BT 37.4℃, BP 124/70, HR 88, SpO2 96%(N2L).\nChest: 右肺野 Crackles 依然著明だが、Air入りは悪くない。\nIn/Out: 補液+飲水で1500ml / 尿量 1200ml (利尿ついている)。\n食事: 糖尿病食（軟菜）5割摂取。\n血糖: 朝食前 158。\nA) 肺炎治療2日目。解熱傾向あり、酸素化改善傾向。\n脱水は補正されつつある。\nB型肝炎については、化学療法や免疫抑制療法を行うわけではないが、高齢者の重症感染症であり、入院中の再活性化（de novo含む）念のため注意。現時点では抗ウイルス薬不要、経過観察継続。\nP) 抗生剤継続（ABPC/SBT）。\n酸素2L継続、SPO2安定すれば減量トライ。\nリハビリ介入依頼（廃用予防）。\nメトホルミン休薬継続。",
           "vitalSigns": {
             "temperature": "37.4℃",
             "bloodPressure": "124/70",

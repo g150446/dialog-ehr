@@ -80,11 +80,8 @@ export interface MedicalRecord {
   visitType?: '外来' | '入院';
   dayOfStay?: number; // For inpatient records (e.g., 入院2日目)
   
-  // SOAP format
-  subjective?: string;
-  objective?: string;
-  assessment?: string;
-  plan?: string;
+  // Progress note (unified SOAP format)
+  progressNote?: string;
   
   // Additional fields
   vitalSigns?: {

@@ -18,11 +18,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
   
   // Form state for new medical record
   const [newRecord, setNewRecord] = useState({
-    subjective: '',
-    objective: '',
-    assessment: '',
-    plan: '',
-    notes: ''
+    progressNote: ''
   });
 
   // State for summary input (questions/updates)
@@ -62,6 +58,41 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     // Replace spaces with underscores, remove only problematic filesystem characters
     const sanitizedName = patient.name.replace(/\s+/g, '_').replace(/[<>:"/\\|?*]/g, '');
     link.download = `${sanitizedName}-medical-records.json`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Export summary to JSON file
+  const handleExportSummary = () => {
+    if (!patient.summary) {
+      return;
+    }
+
+    // Create JSON object with patient identification and summary data
+    const summaryData = {
+      patientId: patient.id,
+      patientCode: patient.patientCode,
+      patientName: patient.name,
+      summary: patient.summary,
+      exportedAt: new Date().toISOString()
+    };
+
+    // Create JSON data with proper formatting
+    const jsonData = JSON.stringify(summaryData, null, 2);
+    
+    // Create blob and download
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Use patient name for filename (sanitize for filesystem - preserve Japanese characters)
+    // Replace spaces with underscores, remove only problematic filesystem characters
+    const sanitizedName = patient.name.replace(/\s+/g, '_').replace(/[<>:"/\\|?*]/g, '');
+    link.download = `${sanitizedName}-summary.json`;
     
     document.body.appendChild(link);
     link.click();
@@ -190,13 +221,19 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
             </button>
             <button
               onClick={() => {
-                if (showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0) {
+                if (activeView === 'summary' && patient.summary) {
+                  handleExportSummary();
+                } else if (showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0) {
                   handleExportMedicalRecords();
                 }
               }}
-              disabled={!showPastRecordsOnly || !patient.medicalRecords || patient.medicalRecords.length === 0}
+              disabled={
+                !((showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0) ||
+                  (activeView === 'summary' && patient.summary))
+              }
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
-                showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0
+                (showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0) ||
+                (activeView === 'summary' && patient.summary)
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
                   : 'bg-gray-200 border border-gray-400 text-gray-700 opacity-50 cursor-not-allowed'
               }`}
@@ -679,28 +716,16 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                             </div>
                           )}
 
-                          {/* SOAP Format */}
+                          {/* Progress Note */}
                           <div className="space-y-3 md:space-y-4">
-                            {record.subjective && (
+                            {record.progressNote && (
                               <div>
                                 <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                                  <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs mr-2">S</span>
-                                  <span>Subjective (主観的情報)</span>
-                                </div>
-                                <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-green-50 p-2 md:p-3 rounded border-l-4 border-green-500">
-                                  {record.subjective}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {record.objective && (
-                              <div>
-                                <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs mr-2">O</span>
-                                  <span>Objective (客観的情報)</span>
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs mr-2">経過記録</span>
+                                  <span>Progress Note</span>
                                 </div>
                                 <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500">
-                                  {record.objective}
+                                  {record.progressNote}
                                 </div>
                               </div>
                             )}
@@ -726,30 +751,6 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                 <div className="text-xs font-bold text-gray-600 mb-1">画像所見:</div>
                                 <div className="text-xs md:text-sm text-gray-800 bg-gray-50 p-2 rounded">
                                   {record.imagingResults}
-                                </div>
-                              </div>
-                            )}
-
-                            {record.assessment && (
-                              <div>
-                                <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                                  <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs mr-2">A</span>
-                                  <span>Assessment (評価・診断)</span>
-                                </div>
-                                <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-yellow-50 p-2 md:p-3 rounded border-l-4 border-yellow-500">
-                                  {record.assessment}
-                                </div>
-                              </div>
-                            )}
-
-                            {record.plan && (
-                              <div>
-                                <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                                  <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs mr-2">P</span>
-                                  <span>Plan (治療計画)</span>
-                                </div>
-                                <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-purple-50 p-2 md:p-3 rounded border-l-4 border-purple-500">
-                                  {record.plan}
                                 </div>
                               </div>
                             )}
@@ -863,28 +864,16 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                     </div>
                                   )}
 
-                                  {/* SOAP Format */}
+                                  {/* Progress Note */}
                                   <div className="space-y-3 md:space-y-4">
-                                    {record.subjective && (
+                                    {record.progressNote && (
                                       <div>
                                         <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs mr-2">S</span>
-                                          <span>Subjective (主観的情報)</span>
-                                        </div>
-                                        <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-green-50 p-2 md:p-3 rounded border-l-4 border-green-500">
-                                          {record.subjective}
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    {record.objective && (
-                                      <div>
-                                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs mr-2">O</span>
-                                          <span>Objective (客観的情報)</span>
+                                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs mr-2">経過記録</span>
+                                          <span>Progress Note</span>
                                         </div>
                                         <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500">
-                                          {record.objective}
+                                          {record.progressNote}
                                         </div>
                                       </div>
                                     )}
@@ -910,30 +899,6 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                         <div className="text-xs font-bold text-gray-600 mb-1">画像所見:</div>
                                         <div className="text-xs md:text-sm text-gray-800 bg-gray-50 p-2 rounded">
                                           {record.imagingResults}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {record.assessment && (
-                                      <div>
-                                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                                          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs mr-2">A</span>
-                                          <span>Assessment (評価・診断)</span>
-                                        </div>
-                                        <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-yellow-50 p-2 md:p-3 rounded border-l-4 border-yellow-500">
-                                          {record.assessment}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {record.plan && (
-                                      <div>
-                                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                                          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs mr-2">P</span>
-                                          <span>Plan (治療計画)</span>
-                                        </div>
-                                        <div className="pl-4 md:pl-8 text-xs md:text-sm text-gray-800 whitespace-pre-line bg-purple-50 p-2 md:p-3 rounded border-l-4 border-purple-500">
-                                          {record.plan}
                                         </div>
                                       </div>
                                     )}
@@ -999,77 +964,20 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                       console.log('New record:', newRecord);
                       alert('診療録を保存しました（開発中）');
                       setNewRecord({
-                        subjective: '',
-                        objective: '',
-                        assessment: '',
-                        plan: '',
-                        notes: ''
+                        progressNote: ''
                       });
                     }} className="space-y-4">
-                      {/* S - Subjective */}
+                      {/* Progress Note */}
                       <div>
                         <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                          <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs mr-2">S</span>
-                          <span>Subjective (主観的情報)</span>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs mr-2">経過記録</span>
+                          <span>Progress Note</span>
                         </div>
                         <textarea
-                          value={newRecord.subjective}
-                          onChange={(e) => setNewRecord({ ...newRecord, subjective: e.target.value })}
-                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-green-50 p-2 md:p-3 rounded border-l-4 border-green-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-y min-h-[80px]"
-                          placeholder="主観的情報を入力してください"
-                        />
-                      </div>
-
-                      {/* O - Objective */}
-                      <div>
-                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs mr-2">O</span>
-                          <span>Objective (客観的情報)</span>
-                        </div>
-                        <textarea
-                          value={newRecord.objective}
-                          onChange={(e) => setNewRecord({ ...newRecord, objective: e.target.value })}
-                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[80px]"
-                          placeholder="客観的情報を入力してください"
-                        />
-                      </div>
-
-                      {/* A - Assessment */}
-                      <div>
-                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs mr-2">A</span>
-                          <span>Assessment (評価・診断)</span>
-                        </div>
-                        <textarea
-                          value={newRecord.assessment}
-                          onChange={(e) => setNewRecord({ ...newRecord, assessment: e.target.value })}
-                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-yellow-50 p-2 md:p-3 rounded border-l-4 border-yellow-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-y min-h-[80px]"
-                          placeholder="評価・診断を入力してください"
-                        />
-                      </div>
-
-                      {/* P - Plan */}
-                      <div>
-                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
-                          <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs mr-2">P</span>
-                          <span>Plan (治療計画)</span>
-                        </div>
-                        <textarea
-                          value={newRecord.plan}
-                          onChange={(e) => setNewRecord({ ...newRecord, plan: e.target.value })}
-                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-purple-50 p-2 md:p-3 rounded border-l-4 border-purple-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-y min-h-[80px]"
-                          placeholder="治療計画を入力してください"
-                        />
-                      </div>
-
-                      {/* Free Text Area */}
-                      <div>
-                        <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5">備考・その他</div>
-                        <textarea
-                          value={newRecord.notes}
-                          onChange={(e) => setNewRecord({ ...newRecord, notes: e.target.value })}
-                          className="w-full text-xs md:text-sm text-gray-800 bg-white p-2 md:p-3 rounded border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[100px]"
-                          placeholder="備考やその他の情報を自由に入力してください"
+                          value={newRecord.progressNote}
+                          onChange={(e) => setNewRecord({ ...newRecord, progressNote: e.target.value })}
+                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[300px]"
+                          placeholder="経過記録を入力してください（S/O/A/P形式で記入可能）"
                         />
                       </div>
 
@@ -1078,11 +986,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                         <button
                           type="button"
                           onClick={() => setNewRecord({
-                            subjective: '',
-                            objective: '',
-                            assessment: '',
-                            plan: '',
-                            notes: ''
+                            progressNote: ''
                           })}
                           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs md:text-sm font-medium transition-colors"
                         >
