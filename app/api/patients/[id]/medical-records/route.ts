@@ -22,15 +22,16 @@ function transformMedicalRecord(mr: any): MedicalRecord {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const recordData = body;
 
     // Verify patient exists
     const patient = await prisma.patient.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!patient) {
@@ -43,7 +44,7 @@ export async function POST(
     // Create medical record
     const medicalRecord = await prisma.medicalRecord.create({
       data: {
-        patientId: params.id,
+        patientId: id,
         recordId: recordData.id,
         date: recordData.date,
         type: recordData.type,

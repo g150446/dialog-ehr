@@ -5,9 +5,9 @@ import PatientContent from './PatientContent';
 import { Patient, Visit, MedicalRecord } from '@/types/patient';
 
 interface PatientDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // Helper function to transform Prisma patient to Patient type
@@ -82,11 +82,12 @@ function transformPatient(patient: any): Patient {
 }
 
 export default async function PatientDetailPage({ params }: PatientDetailPageProps) {
+  const { id } = await params;
   let patient: Patient | null = null;
   
   try {
     const dbPatient = await prisma.patient.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         visits: {
           orderBy: {
