@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { getPatientById } from '@/lib/api';
+import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import PatientContent from './PatientContent';
+import { Patient, Visit, MedicalRecord } from '@/types/patient';
 
 interface PatientDetailPageProps {
   params: {
@@ -9,11 +10,102 @@ interface PatientDetailPageProps {
   };
 }
 
+// Helper function to transform Prisma patient to Patient type
+function transformPatient(patient: any): Patient {
+  return {
+    id: patient.id,
+    patientCode: patient.patientCode,
+    name: patient.name,
+    nameKana: patient.nameKana || undefined,
+    gender: patient.gender as Patient['gender'],
+    dateOfBirth: patient.dateOfBirth,
+    age: patient.age,
+    medicalRecordNumber: patient.medicalRecordNumber,
+    phone: patient.phone || undefined,
+    email: patient.email || undefined,
+    address: patient.address || undefined,
+    bloodType: patient.bloodType || undefined,
+    allergies: (patient.allergies as string[]) || undefined,
+    conditions: (patient.conditions as string[]) || undefined,
+    height: patient.height || undefined,
+    weight: patient.weight || undefined,
+    bmi: patient.bmi || undefined,
+    department: patient.department || undefined,
+    bed: patient.bed || undefined,
+    admissionDate: patient.admissionDate || undefined,
+    dischargeDate: patient.dischargeDate || undefined,
+    admissionDiagnosis: patient.admissionDiagnosis || undefined,
+    dpcDiagnosis: patient.dpcDiagnosis || undefined,
+    dpcPeriod: patient.dpcPeriod || undefined,
+    wardAttendingPhysician: patient.wardAttendingPhysician || undefined,
+    resident: patient.resident || undefined,
+    attendingPhysicianA: patient.attendingPhysicianA || undefined,
+    attendingPhysicianB: patient.attendingPhysicianB || undefined,
+    outpatientAttendingPhysician: patient.outpatientAttendingPhysician || undefined,
+    attendingNS: patient.attendingNS || undefined,
+    specialNotes: patient.specialNotes || undefined,
+    status: patient.status || undefined,
+    plan: patient.plan || undefined,
+    nutrition: patient.nutrition || undefined,
+    path: patient.path || undefined,
+    clinicalPath: patient.clinicalPath || undefined,
+    nst: patient.nst || undefined,
+    rst: patient.rst || undefined,
+    chiefComplaint: patient.chiefComplaint || undefined,
+    smokingHistory: patient.smokingHistory || undefined,
+    drinkingHistory: patient.drinkingHistory || undefined,
+    summary: patient.summary || undefined,
+    visits: patient.visits?.map((v: any) => ({
+      id: v.visitId || v.id,
+      date: v.date,
+      department: v.department,
+      type: v.type as Visit['type'],
+      diagnosis: v.diagnosis || undefined,
+      notes: v.notes || undefined,
+      physician: v.physician || undefined,
+    })) || undefined,
+    medicalRecords: patient.medicalRecords?.map((mr: any) => ({
+      id: mr.recordId || mr.id,
+      date: mr.date,
+      type: mr.type as MedicalRecord['type'],
+      visitType: mr.visitType || undefined,
+      dayOfStay: mr.dayOfStay || undefined,
+      progressNote: mr.progressNote || undefined,
+      vitalSigns: mr.vitalSigns as MedicalRecord['vitalSigns'] || undefined,
+      laboratoryResults: mr.laboratoryResults as MedicalRecord['laboratoryResults'] || undefined,
+      imagingResults: mr.imagingResults || undefined,
+      medications: mr.medications as MedicalRecord['medications'] || undefined,
+      physician: mr.physician || undefined,
+      notes: mr.notes || undefined,
+    })) || undefined,
+  };
+}
+
 export default async function PatientDetailPage({ params }: PatientDetailPageProps) {
-  let patient;
+  let patient: Patient | null = null;
   
   try {
-    patient = await getPatientById(params.id);
+    const dbPatient = await prisma.patient.findUnique({
+      where: { id: params.id },
+      include: {
+        visits: {
+          orderBy: {
+            date: 'desc',
+          },
+        },
+        medicalRecords: {
+          orderBy: {
+            date: 'desc',
+          },
+        },
+      },
+    });
+
+    if (!dbPatient) {
+      notFound();
+    }
+
+    patient = transformPatient(dbPatient);
   } catch (error) {
     console.error('Failed to load patient:', error);
     notFound();

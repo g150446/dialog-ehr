@@ -1,46 +1,130 @@
 # Electronic Health Record System
 
-An electronic health record (EHR) system built with Next.js, TypeScript, and Tailwind CSS. This application provides comprehensive patient management capabilities, allowing healthcare providers to view patient lists and access detailed medical records.
+An electronic health record (EHR) system built with Next.js, TypeScript, Tailwind CSS, and PostgreSQL. This application provides comprehensive patient management capabilities, allowing healthcare providers to view patient lists and access detailed medical records.
 
 ## Features
 
 - Patient list management with intuitive table layout
 - Comprehensive patient detail pages with full medical information
 - Seamless navigation between list and detail views
-- RESTful API backend integration
+- RESTful API backend integration with Next.js API routes
+- PostgreSQL database for reliable data storage
 - Responsive design optimized for desktop and mobile devices
 - Modern UI built with Tailwind CSS
 
 ## Prerequisites
 
 - Node.js 18+ and npm/yarn/pnpm
+- Docker and Docker Compose (for PostgreSQL database)
 
 ## Setup
 
-1. Install dependencies:
+### 1. Install Dependencies
+
 ```bash
 npm install
 ```
 
-2. Start the backend API server (in a separate terminal):
+### 2. Configure Environment Variables
+
+Create a `.env` file in the root directory (you can copy from `.env.example`):
+
 ```bash
-npm run json-server
+cp .env.example .env
 ```
 
-This will start the API server on `http://localhost:3001` serving the patient data from `db.json`.
+The default configuration uses:
+- Database URL: `postgresql://postgres:postgres@localhost:5432/dialog_ehr?schema=public`
+- PostgreSQL credentials: `postgres/postgres`
+- Database name: `dialog_ehr`
+- Port: `5432`
 
-3. Start the Next.js development server:
+### 3. Start PostgreSQL Database
+
+Start the PostgreSQL container using Docker Compose:
+
+```bash
+npm run db:up
+```
+
+This will start a PostgreSQL 16 container in the background. The database will be available at `localhost:5432`.
+
+### 4. Run Database Migrations
+
+Generate Prisma Client and create the database schema:
+
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+When prompted, name your migration (e.g., "init").
+
+### 5. Seed the Database
+
+Import existing patient data from `db.json`:
+
+```bash
+npm run db:seed
+```
+
+This will migrate all patient data, visits, and medical records from the JSON file to PostgreSQL.
+
+### 6. Start the Development Server
+
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Database Management
+
+### Start/Stop Database
+
+```bash
+# Start PostgreSQL container
+npm run db:up
+
+# Stop PostgreSQL container
+npm run db:down
+```
+
+### Database Migrations
+
+```bash
+# Create and apply a new migration
+npm run db:migrate
+
+# Generate Prisma Client (after schema changes)
+npm run db:generate
+```
+
+### Database GUI
+
+Access Prisma Studio to view and edit data in a visual interface:
+
+```bash
+npm run db:studio
+```
+
+This will open Prisma Studio at `http://localhost:5555`.
+
+### Seed Data
+
+To re-import data from `db.json` (this will clear existing data):
+
+```bash
+npm run db:seed
+```
 
 ## Project Structure
 
 ```
 dialog-ehr/
 ├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   │   └── patients/      # Patient API endpoints
 │   ├── layout.tsx         # Root layout
 │   ├── page.tsx           # Patient list page
 │   ├── globals.css        # Global styles
@@ -48,11 +132,17 @@ dialog-ehr/
 │       └── [id]/
 │           ├── page.tsx   # Patient detail page
 │           └── not-found.tsx
+├── prisma/
+│   └── schema.prisma      # Prisma schema definition
+├── scripts/
+│   └── migrate-data.ts    # Data migration script
 ├── types/
 │   └── patient.ts         # TypeScript interfaces
 ├── lib/
-│   └── api.ts            # API client utilities
-├── db.json               # Database file
+│   ├── api.ts            # API client utilities
+│   └── db.ts             # Prisma client instance
+├── docker-compose.yml     # PostgreSQL container configuration
+├── db.json               # Legacy database file (for migration)
 └── package.json
 ```
 
@@ -65,16 +155,36 @@ The development environment includes sample patient records for testing:
 
 ## API Endpoints
 
-The backend API provides the following endpoints:
-- `GET /patients` - Retrieve all patients
-- `GET /patients/:id` - Retrieve a specific patient by ID
+The Next.js API routes provide the following endpoints:
+- `GET /api/patients` - Retrieve all patients
+- `GET /api/patients/:id` - Retrieve a specific patient by ID
+- `POST /api/patients` - Create a new patient
+- `PUT /api/patients/:id` - Update a patient
+- `DELETE /api/patients/:id` - Delete a patient
+- `POST /api/patients/:id/medical-records` - Create a medical record for a patient
 
 ## Development
 
-- Run the development server: `npm run dev`
-- Build for production: `npm run build`
-- Start production server: `npm start`
-- Run linting: `npm run lint`
+### Available Scripts
+
+- `npm run dev` - Start the Next.js development server
+- `npm run build` - Build the application for production
+- `npm run start` - Start the production server
+- `npm run lint` - Run ESLint
+- `npm run db:up` - Start PostgreSQL container
+- `npm run db:down` - Stop PostgreSQL container
+- `npm run db:migrate` - Run database migrations
+- `npm run db:generate` - Generate Prisma Client
+- `npm run db:seed` - Import data from db.json
+- `npm run db:studio` - Open Prisma Studio GUI
+
+### Development Workflow
+
+1. Ensure PostgreSQL is running: `npm run db:up`
+2. Start the development server: `npm run dev`
+3. Make schema changes in `prisma/schema.prisma`
+4. Run migrations: `npm run db:migrate`
+5. Generate Prisma Client: `npm run db:generate`
 
 ## Technologies Used
 
@@ -82,7 +192,9 @@ The backend API provides the following endpoints:
 - React 18
 - TypeScript
 - Tailwind CSS
-- JSON Server
+- PostgreSQL (via Docker)
+- Prisma ORM
+- Next.js API Routes
 
 ## Documentation
 

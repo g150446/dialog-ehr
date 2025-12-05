@@ -18,7 +18,14 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
   
   // Form state for new medical record
   const [newRecord, setNewRecord] = useState({
-    progressNote: ''
+    progressNote: '',
+    vitalSigns: {
+      temperature: '',
+      bloodPressure: '',
+      heartRate: '',
+      spO2: '',
+      oxygenFlow: ''
+    }
   });
 
   // State for summary input (questions/updates)
@@ -964,9 +971,103 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                       console.log('New record:', newRecord);
                       alert('診療録を保存しました（開発中）');
                       setNewRecord({
-                        progressNote: ''
+                        progressNote: '',
+                        vitalSigns: {
+                          temperature: '',
+                          bloodPressure: '',
+                          heartRate: '',
+                          spO2: '',
+                          oxygenFlow: ''
+                        }
                       });
                     }} className="space-y-4">
+                      {/* Vital Signs Input */}
+                      <div className="mb-3 md:mb-4 p-2 md:p-3 bg-blue-50 rounded border border-blue-200">
+                        <div className="text-xs font-bold text-blue-800 mb-2">バイタルサイン</div>
+                        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
+                          <div>
+                            <label className="block text-gray-600 mb-1">体温:</label>
+                            <input
+                              type="text"
+                              value={newRecord.vitalSigns.temperature}
+                              onChange={(e) => setNewRecord({
+                                ...newRecord,
+                                vitalSigns: {
+                                  ...newRecord.vitalSigns,
+                                  temperature: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="℃"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-600 mb-1">血圧:</label>
+                            <input
+                              type="text"
+                              value={newRecord.vitalSigns.bloodPressure}
+                              onChange={(e) => setNewRecord({
+                                ...newRecord,
+                                vitalSigns: {
+                                  ...newRecord.vitalSigns,
+                                  bloodPressure: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="mmHg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-600 mb-1">心拍数:</label>
+                            <input
+                              type="text"
+                              value={newRecord.vitalSigns.heartRate}
+                              onChange={(e) => setNewRecord({
+                                ...newRecord,
+                                vitalSigns: {
+                                  ...newRecord.vitalSigns,
+                                  heartRate: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="bpm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-600 mb-1">SpO2:</label>
+                            <input
+                              type="text"
+                              value={newRecord.vitalSigns.spO2}
+                              onChange={(e) => setNewRecord({
+                                ...newRecord,
+                                vitalSigns: {
+                                  ...newRecord.vitalSigns,
+                                  spO2: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="%"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-600 mb-1">酸素流量:</label>
+                            <input
+                              type="text"
+                              value={newRecord.vitalSigns.oxygenFlow}
+                              onChange={(e) => setNewRecord({
+                                ...newRecord,
+                                vitalSigns: {
+                                  ...newRecord.vitalSigns,
+                                  oxygenFlow: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="L/min"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Progress Note */}
                       <div>
                         <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
@@ -977,7 +1078,6 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                           value={newRecord.progressNote}
                           onChange={(e) => setNewRecord({ ...newRecord, progressNote: e.target.value })}
                           className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[300px]"
-                          placeholder="経過記録を入力してください（S/O/A/P形式で記入可能）"
                         />
                       </div>
 
@@ -986,7 +1086,14 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                         <button
                           type="button"
                           onClick={() => setNewRecord({
-                            progressNote: ''
+                            progressNote: '',
+                            vitalSigns: {
+                              temperature: '',
+                              bloodPressure: '',
+                              heartRate: '',
+                              spO2: '',
+                              oxygenFlow: ''
+                            }
                           })}
                           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs md:text-sm font-medium transition-colors"
                         >
@@ -1010,4 +1117,5 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     </>
   );
 }
+
 
