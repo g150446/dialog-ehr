@@ -221,7 +221,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
       </div>
 
       {/* Main Content Area */}
-      <div className="flex h-[calc(100vh-180px)] md:h-[calc(100vh-200px)]">
+      <div className="flex h-[calc(100vh-180px)] md:h-[calc(100vh-170px)]">
         <PatientContent patient={patient} age={age} bmi={bmi} />
       </div>
     </div>

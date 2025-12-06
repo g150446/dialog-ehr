@@ -310,7 +310,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
       <div className={`fixed md:static top-0 left-0 h-full md:h-auto w-64 bg-gradient-to-b from-gray-100 to-gray-150 border-r-2 border-gray-400 overflow-y-auto shadow-inner z-50 md:z-auto transform transition-transform duration-300 ease-in-out ${
         isDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
-        <div className="p-3">
+        <div className="p-3 md:pt-3 md:px-3 md:pb-0">
           {/* Mobile Close Button */}
           <div className="flex justify-end mb-3 md:hidden">
             <button
@@ -484,8 +484,8 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
       </div>
 
       {/* Central Panel - Record Details */}
-      <div className={`flex-1 bg-white ${showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'overflow-hidden flex flex-col' : showMonitoring ? 'overflow-y-auto' : 'overflow-y-auto'} ${showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'p-0' : showMonitoring ? 'p-3 md:p-6' : 'p-3 md:p-6'}`}>
-        <div className={showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'flex-1 flex flex-col min-h-0' : showMonitoring ? 'p-0' : activeView === 'summary' && shouldUseTwoColumns ? 'p-3 md:p-6' : 'mb-4 p-3 md:p-6'}>
+      <div className={`flex-1 bg-white ${showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'overflow-hidden flex flex-col' : showMonitoring ? 'overflow-y-auto' : 'overflow-y-auto'} ${showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'p-0' : showMonitoring ? 'p-3 md:pt-6 md:px-6 md:pb-0' : 'p-3 md:pt-6 md:px-6 md:pb-0'}`}>
+        <div className={showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'flex-1 flex flex-col min-h-0' : showMonitoring ? 'p-0' : activeView === 'summary' && shouldUseTwoColumns ? 'p-3 md:pt-6 md:px-6 md:pb-0' : 'mb-4 p-3 md:pt-6 md:px-6 md:pb-0'}>
           {/* Patient Information Section */}
           {activeView === 'patient-info' && (
             <>
@@ -643,7 +643,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
               {/* Staff Information Section */}
               {(patient.wardAttendingPhysician || patient.attendingPhysicianA) && (
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg mb-3 md:mb-5 border-2 border-gray-300 shadow-sm">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg mb-3 md:mb-2 border-2 border-gray-300 shadow-sm">
                   <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">担当医情報</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
                     {patient.wardAttendingPhysician && (
@@ -672,7 +672,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
           {/* Visit History Section */}
           {activeView === 'visit-history' && patient.visits && patient.visits.length > 0 && (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
               <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">来院履歴</h3>
               <div className="space-y-3">
                 {patient.visits.map((visit) => (
@@ -702,14 +702,14 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                   {/* Left Column: Summary */}
                   <div className="w-1/2 overflow-y-auto">
                     {patient.summary ? (
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                         <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリ</h3>
                         <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
                           {patient.summary}
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                         <p className="text-xs md:text-sm text-gray-600">サマリがありません。</p>
                       </div>
                     )}
@@ -717,7 +717,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
                   {/* Right Column: Input Form */}
                   <div className="w-1/2 overflow-y-auto">
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                       <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリへの質問または更新</h3>
                       <div className="space-y-4">
                         <textarea
@@ -754,14 +754,14 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                   {/* Upper Area: Summary */}
                   <div className="flex-1 overflow-y-auto min-h-0 mb-2">
                     {patient.summary ? (
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                         <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリ</h3>
                         <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
                           {patient.summary}
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                         <p className="text-xs md:text-sm text-gray-600">サマリがありません。</p>
                       </div>
                     )}
@@ -769,7 +769,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
                   {/* Lower Area: Input Form */}
                   <div className="flex-1 overflow-y-auto min-h-0">
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                       <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリへの質問または更新</h3>
                       <div className="space-y-4">
                         <textarea
@@ -812,7 +812,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 <div className={showPastRecordsOnly ? 'w-full flex-1 flex flex-col min-h-0' : 'w-1/2'}>
                   {/* Summary Section */}
                   {!showPastRecordsOnly && patient.summary && (
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm mb-4">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm mb-4">
                       <div className="flex items-center justify-between border-b border-gray-400 pb-1 mb-3 md:mb-4">
                         <h3 className="font-bold text-xs md:text-sm text-gray-800">サマリ</h3>
                         <button
@@ -843,7 +843,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                   {patient.medicalRecords && patient.medicalRecords.length > 0 && (
                     <>
                       {!showPastRecordsOnly ? (
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                           <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去診療録</h3>
                           <div className="space-y-5 max-h-[calc(100vh-400px)] overflow-y-auto">
                             {patient.medicalRecords
@@ -993,7 +993,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-5 flex-1 overflow-y-auto min-h-0 p-3 md:p-6">
+                        <div className="space-y-5 flex-1 overflow-y-auto min-h-0 p-3 md:pt-6 md:px-6 md:pb-0">
                           {patient.medicalRecords
                             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                             .map((record) => {
@@ -1147,7 +1147,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                   {(!patient.medicalRecords || patient.medicalRecords.length === 0) && (
                     <>
                       {!showPastRecordsOnly ? (
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                           <p className="text-xs md:text-sm text-gray-600">診療録がありません。</p>
                         </div>
                       ) : (
@@ -1165,7 +1165,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 <div className="w-1/2 overflow-y-auto">
                   {/* Past Monitoring Records */}
                   {patient.monitoringRecords && patient.monitoringRecords.length > 0 ? (
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                       <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去のモニタリング記録</h3>
                       <div className="space-y-5 max-h-[calc(100vh-400px)] overflow-y-auto">
                         {patient.monitoringRecords
@@ -1288,7 +1288,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
                       <p className="text-xs md:text-sm text-gray-600">過去のモニタリング記録はありません。</p>
                     </div>
                   )}
@@ -1298,7 +1298,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               {/* Right Column: New Medical Record Input Form */}
               {!showPastRecordsOnly && !showMonitoring && (
               <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
                     <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">新規診療録入力</h3>
                     <form onSubmit={handleSaveMedicalRecord} className="space-y-4">
                       {/* Vital Signs Input */}
@@ -1435,7 +1435,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               {/* Monitoring Record Input Form */}
               {showMonitoring && (
                 <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
                     <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">モニタリング記録入力</h3>
                     <form onSubmit={handleSaveMonitoringRecord} className="space-y-4">
                       {/* Vital Signs Input */}
