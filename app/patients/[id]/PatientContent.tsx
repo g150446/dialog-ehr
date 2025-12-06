@@ -1397,7 +1397,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                         <textarea
                           value={newRecord.progressNote}
                           onChange={(e) => setNewRecord({ ...newRecord, progressNote: e.target.value })}
-                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[300px]"
+                          className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[150px] md:min-h-[300px]"
                         />
                       </div>
 
