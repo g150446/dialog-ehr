@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import PatientContent from './PatientContent';
-import { Patient, Visit, MedicalRecord } from '@/types/patient';
+import { Patient, Visit, MedicalRecord, MonitoringRecord } from '@/types/patient';
 
 interface PatientDetailPageProps {
   params: Promise<{
@@ -78,6 +78,24 @@ function transformPatient(patient: any): Patient {
       physician: mr.physician || undefined,
       notes: mr.notes || undefined,
     })) || undefined,
+    monitoringRecords: patient.monitoringRecords?.map((mr: any) => ({
+      id: mr.recordId || mr.id,
+      date: mr.date,
+      temperature: mr.temperature || undefined,
+      bloodPressure: mr.bloodPressure || undefined,
+      heartRate: mr.heartRate || undefined,
+      spO2: mr.spO2 || undefined,
+      oxygenFlow: mr.oxygenFlow || undefined,
+      weight: mr.weight || undefined,
+      foodIntakeMorning: mr.foodIntakeMorning || undefined,
+      foodIntakeLunch: mr.foodIntakeLunch || undefined,
+      foodIntakeEvening: mr.foodIntakeEvening || undefined,
+      urineOutput: mr.urineOutput || undefined,
+      bowelMovementCount: mr.bowelMovementCount || undefined,
+      urinationCount: mr.urinationCount || undefined,
+      drainOutput: mr.drainOutput || undefined,
+      other: mr.other || undefined,
+    })) || undefined,
   };
 }
 
@@ -95,6 +113,11 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
           },
         },
         medicalRecords: {
+          orderBy: {
+            date: 'desc',
+          },
+        },
+        monitoringRecords: {
           orderBy: {
             date: 'desc',
           },

@@ -1,0 +1,99 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { MonitoringRecord } from '@/types/patient';
+
+// Helper function to transform Prisma monitoring record to MonitoringRecord type
+function transformMonitoringRecord(mr: any): MonitoringRecord {
+  return {
+    id: mr.recordId || mr.id,
+    date: mr.date,
+    temperature: mr.temperature || undefined,
+    bloodPressure: mr.bloodPressure || undefined,
+    heartRate: mr.heartRate || undefined,
+    spO2: mr.spO2 || undefined,
+    oxygenFlow: mr.oxygenFlow || undefined,
+    weight: mr.weight || undefined,
+    foodIntakeMorning: mr.foodIntakeMorning || undefined,
+    foodIntakeLunch: mr.foodIntakeLunch || undefined,
+    foodIntakeEvening: mr.foodIntakeEvening || undefined,
+    urineOutput: mr.urineOutput || undefined,
+    bowelMovementCount: mr.bowelMovementCount || undefined,
+    urinationCount: mr.urinationCount || undefined,
+    drainOutput: mr.drainOutput || undefined,
+    other: mr.other || undefined,
+  };
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const recordData = body;
+
+    // Verify patient exists
+    const patient = await prisma.patient.findUnique({
+      where: { id },
+    });
+
+    if (!patient) {
+      return NextResponse.json(
+        { error: 'Patient not found' },
+        { status: 404 }
+      );
+    }
+
+    // Helper function to parse float or return undefined
+    const parseFloatOrUndefined = (value: string | null | undefined): number | undefined => {
+      if (value === null || value === undefined || value === '') return undefined;
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? undefined : parsed;
+    };
+
+    // Helper function to parse int or return undefined
+    const parseIntOrUndefined = (value: string | null | undefined): number | undefined => {
+      if (value === null || value === undefined || value === '') return undefined;
+      const parsed = parseInt(value);
+      return isNaN(parsed) ? undefined : parsed;
+    };
+
+    // Helper function to return string or undefined
+    const stringOrUndefined = (value: string | null | undefined): string | undefined => {
+      return (value === null || value === undefined || value === '') ? undefined : value;
+    };
+
+    // Create monitoring record
+    const monitoringRecord = await prisma.monitoringRecord.create({
+      data: {
+        patientId: id,
+        recordId: recordData.recordId,
+        date: recordData.date,
+        temperature: parseFloatOrUndefined(recordData.temperature),
+        bloodPressure: stringOrUndefined(recordData.bloodPressure),
+        heartRate: parseFloatOrUndefined(recordData.heartRate),
+        spO2: parseFloatOrUndefined(recordData.spO2),
+        oxygenFlow: parseFloatOrUndefined(recordData.oxygenFlow),
+        weight: parseFloatOrUndefined(recordData.weight),
+        foodIntakeMorning: stringOrUndefined(recordData.foodIntakeMorning),
+        foodIntakeLunch: stringOrUndefined(recordData.foodIntakeLunch),
+        foodIntakeEvening: stringOrUndefined(recordData.foodIntakeEvening),
+        urineOutput: parseFloatOrUndefined(recordData.urineOutput),
+        bowelMovementCount: parseIntOrUndefined(recordData.bowelMovementCount),
+        urinationCount: parseIntOrUndefined(recordData.urinationCount),
+        drainOutput: parseFloatOrUndefined(recordData.drainOutput),
+        other: stringOrUndefined(recordData.other),
+      },
+    });
+
+    return NextResponse.json(transformMonitoringRecord(monitoringRecord), { status: 201 });
+  } catch (error) {
+    console.error('Error creating monitoring record:', error);
+    return NextResponse.json(
+      { error: 'Failed to create monitoring record' },
+      { status: 500 }
+    );
+  }
+}
+

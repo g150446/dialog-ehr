@@ -71,6 +71,7 @@ model Patient {
   // Relations
   visits                Visit[]
   medicalRecords        MedicalRecord[]
+  monitoringRecords     MonitoringRecord[]
   
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -131,4 +132,38 @@ model MedicalRecord {
   @@index([patientId])
   @@index([date])
   @@map("medical_records")
+}
+
+model MonitoringRecord {
+  id                    String   @id @default(uuid())
+  patientId             String
+  recordId              String
+  date                  String
+  
+  // Vital Signs (as separate columns for query performance)
+  temperature           Float?
+  bloodPressure         String?
+  heartRate             Float?
+  spO2                  Float?
+  oxygenFlow            Float?
+  
+  // Monitoring Data
+  weight                Float?
+  foodIntakeMorning     String?
+  foodIntakeLunch       String?
+  foodIntakeEvening     String?
+  urineOutput           Float?
+  bowelMovementCount    Int?
+  urinationCount        Int?
+  drainOutput           Float?
+  other                 String?  @db.Text
+  
+  patient               Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@index([patientId])
+  @@index([date])
+  @@map("monitoring_records")
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Patient, MedicalRecord } from '@/types/patient';
+import { Patient, MedicalRecord, MonitoringRecord } from '@/types/patient';
 
 interface PatientContentProps {
   patient: Patient;
@@ -16,6 +16,8 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
   const [showPastRecordsOnly, setShowPastRecordsOnly] = useState(false);
   const [showMonitoring, setShowMonitoring] = useState(false);
+  const [isSavingMedicalRecord, setIsSavingMedicalRecord] = useState(false);
+  const [isSavingMonitoringRecord, setIsSavingMonitoringRecord] = useState(false);
   
   // Form state for new medical record
   const [newRecord, setNewRecord] = useState({
@@ -51,6 +53,161 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
   // State for summary input (questions/updates)
   const [summaryInput, setSummaryInput] = useState('');
+
+  // Helper function to check if patient is inpatient
+  const isInpatient = (patient: Patient): boolean => {
+    if (!patient.admissionDate) return false;
+    if (!patient.dischargeDate) return true;
+    const dischargeDate = new Date(patient.dischargeDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    dischargeDate.setHours(0, 0, 0, 0);
+    return dischargeDate > today;
+  };
+
+  // Calculate day of stay for inpatient records
+  const calculateDayOfStay = (admissionDate: string, recordDate: string): number | undefined => {
+    if (!admissionDate) return undefined;
+    const admission = new Date(admissionDate);
+    const record = new Date(recordDate);
+    const diffTime = record.getTime() - admission.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 ? diffDays + 1 : undefined;
+  };
+
+  // Handle save medical record
+  const handleSaveMedicalRecord = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingMedicalRecord(true);
+
+    try {
+      const currentDate = new Date().toISOString().split('T')[0];
+      const patientIsInpatient = isInpatient(patient);
+      const recordType = patientIsInpatient ? '入院診療録' : '外来受診';
+      const visitType = patientIsInpatient ? '入院' : '外来';
+      
+      const dayOfStay = patientIsInpatient && patient.admissionDate
+        ? calculateDayOfStay(patient.admissionDate, currentDate)
+        : undefined;
+
+      const payload = {
+        id: crypto.randomUUID(),
+        date: currentDate,
+        type: recordType,
+        visitType: visitType,
+        dayOfStay: dayOfStay,
+        progressNote: newRecord.progressNote || null,
+        vitalSigns: {
+          temperature: newRecord.vitalSigns.temperature || null,
+          bloodPressure: newRecord.vitalSigns.bloodPressure || null,
+          heartRate: newRecord.vitalSigns.heartRate || null,
+          spO2: newRecord.vitalSigns.spO2 || null,
+          oxygenFlow: newRecord.vitalSigns.oxygenFlow || null,
+        },
+      };
+
+      const response = await fetch(`/api/patients/${patient.id}/medical-records`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save medical record');
+      }
+
+      // Reset form
+      setNewRecord({
+        progressNote: '',
+        vitalSigns: {
+          temperature: '',
+          bloodPressure: '',
+          heartRate: '',
+          spO2: '',
+          oxygenFlow: ''
+        }
+      });
+
+      // Reload page to show updated data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error saving medical record:', error);
+      alert('診療録の保存に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsSavingMedicalRecord(false);
+    }
+  };
+
+  // Handle save monitoring record
+  const handleSaveMonitoringRecord = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingMonitoringRecord(true);
+
+    try {
+      const currentDate = new Date().toISOString().split('T')[0];
+
+      const payload = {
+        recordId: crypto.randomUUID(),
+        date: currentDate,
+        temperature: monitoringRecord.vitalSigns.temperature || null,
+        bloodPressure: monitoringRecord.vitalSigns.bloodPressure || null,
+        heartRate: monitoringRecord.vitalSigns.heartRate || null,
+        spO2: monitoringRecord.vitalSigns.spO2 || null,
+        oxygenFlow: monitoringRecord.vitalSigns.oxygenFlow || null,
+        weight: monitoringRecord.weight || null,
+        foodIntakeMorning: monitoringRecord.foodIntakeMorning || null,
+        foodIntakeLunch: monitoringRecord.foodIntakeLunch || null,
+        foodIntakeEvening: monitoringRecord.foodIntakeEvening || null,
+        urineOutput: monitoringRecord.urineOutput || null,
+        bowelMovementCount: monitoringRecord.bowelMovementCount || null,
+        urinationCount: monitoringRecord.urinationCount || null,
+        drainOutput: monitoringRecord.drainOutput || null,
+        other: monitoringRecord.other || null,
+      };
+
+      const response = await fetch(`/api/patients/${patient.id}/monitoring-records`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save monitoring record');
+      }
+
+      // Reset form
+      setMonitoringRecord({
+        vitalSigns: {
+          temperature: '',
+          bloodPressure: '',
+          heartRate: '',
+          spO2: '',
+          oxygenFlow: ''
+        },
+        weight: '',
+        foodIntakeMorning: '',
+        foodIntakeLunch: '',
+        foodIntakeEvening: '',
+        urineOutput: '',
+        bowelMovementCount: '',
+        urinationCount: '',
+        drainOutput: '',
+        other: ''
+      });
+
+      // Reload page to show updated data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error saving monitoring record:', error);
+      alert('モニタリング記録の保存に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsSavingMonitoringRecord(false);
+    }
+  };
 
   // Aspect ratio detection
   useEffect(() => {
@@ -1007,19 +1164,134 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               {showMonitoring && shouldUseTwoColumns && (
                 <div className="w-1/2 overflow-y-auto">
                   {/* Past Monitoring Records */}
-                  {/* TODO: Replace with actual monitoring records when available */}
-                  {false && (
+                  {patient.monitoringRecords && patient.monitoringRecords.length > 0 ? (
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
                       <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去のモニタリング記録</h3>
                       <div className="space-y-5 max-h-[calc(100vh-400px)] overflow-y-auto">
-                        {/* Monitoring records will be displayed here when available */}
+                        {patient.monitoringRecords
+                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                          .map((record) => {
+                            const recordDate = new Date(record.date);
+                            const dateStr = recordDate.toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              weekday: 'short'
+                            });
+                            
+                            return (
+                              <div key={record.id} className="bg-white rounded-lg border-2 border-gray-300 shadow-sm p-3 md:p-5">
+                                {/* Record Header */}
+                                <div className="mb-3 md:mb-4 pb-2 md:pb-3 border-b-2 border-gray-400">
+                                  <div className="flex items-center gap-3">
+                                    <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded">
+                                      【モニタリング記録】
+                                    </span>
+                                    <span className="font-bold text-gray-800">{dateStr}</span>
+                                  </div>
+                                </div>
+
+                                {/* Monitoring Data */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
+                                  {/* Vital Signs */}
+                                  {record.temperature && (
+                                    <div>
+                                      <span className="text-gray-600">体温:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.temperature}°C</span>
+                                    </div>
+                                  )}
+                                  {record.bloodPressure && (
+                                    <div>
+                                      <span className="text-gray-600">血圧:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.bloodPressure}mmHg</span>
+                                    </div>
+                                  )}
+                                  {record.heartRate && (
+                                    <div>
+                                      <span className="text-gray-600">心拍数:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.heartRate}bpm</span>
+                                    </div>
+                                  )}
+                                  {record.spO2 && (
+                                    <div>
+                                      <span className="text-gray-600">SpO2:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.spO2}%</span>
+                                    </div>
+                                  )}
+                                  {record.oxygenFlow && (
+                                    <div>
+                                      <span className="text-gray-600">酸素流量:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.oxygenFlow}L/min</span>
+                                    </div>
+                                  )}
+                                  {/* Other Monitoring Data */}
+                                  {record.weight && (
+                                    <div>
+                                      <span className="text-gray-600">体重:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.weight}kg</span>
+                                    </div>
+                                  )}
+                                  {record.foodIntakeMorning && (
+                                    <div>
+                                      <span className="text-gray-600">食事量(朝):</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.foodIntakeMorning}</span>
+                                    </div>
+                                  )}
+                                  {record.foodIntakeLunch && (
+                                    <div>
+                                      <span className="text-gray-600">食事量(昼):</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.foodIntakeLunch}</span>
+                                    </div>
+                                  )}
+                                  {record.foodIntakeEvening && (
+                                    <div>
+                                      <span className="text-gray-600">食事量(夕):</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.foodIntakeEvening}</span>
+                                    </div>
+                                  )}
+                                  {record.urineOutput && (
+                                    <div>
+                                      <span className="text-gray-600">尿量:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.urineOutput}ml</span>
+                                    </div>
+                                  )}
+                                  {record.bowelMovementCount && (
+                                    <div>
+                                      <span className="text-gray-600">排便回数:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.bowelMovementCount}回</span>
+                                    </div>
+                                  )}
+                                  {record.urinationCount && (
+                                    <div>
+                                      <span className="text-gray-600">排尿回数:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.urinationCount}回</span>
+                                    </div>
+                                  )}
+                                  {record.drainOutput && (
+                                    <div>
+                                      <span className="text-gray-600">ドレーン廃液量:</span>
+                                      <span className="ml-1 font-medium text-gray-800">{record.drainOutput}ml</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Other Notes */}
+                                {record.other && (
+                                  <div className="mt-3 md:mt-4 pt-3 border-t border-gray-300">
+                                    <div className="text-xs font-bold text-gray-600 mb-1">その他:</div>
+                                    <div className="text-xs md:text-sm text-gray-700 whitespace-pre-line">{record.other}</div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                       </div>
                     </div>
+                  ) : (
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
+                      <p className="text-xs md:text-sm text-gray-600">過去のモニタリング記録はありません。</p>
+                    </div>
                   )}
-                  {/* Empty state - always show for now since monitoring records are not yet stored */}
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
-                    <p className="text-xs md:text-sm text-gray-600">過去のモニタリング記録はありません。</p>
-                  </div>
                 </div>
               )}
 
@@ -1028,22 +1300,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
                     <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">新規診療録入力</h3>
-                    <form onSubmit={(e) => {
-                      e.preventDefault();
-                      // Handle form submission
-                      console.log('New record:', newRecord);
-                      alert('診療録を保存しました（開発中）');
-                      setNewRecord({
-                        progressNote: '',
-                        vitalSigns: {
-                          temperature: '',
-                          bloodPressure: '',
-                          heartRate: '',
-                          spO2: '',
-                          oxygenFlow: ''
-                        }
-                      });
-                    }} className="space-y-4">
+                    <form onSubmit={handleSaveMedicalRecord} className="space-y-4">
                       {/* Vital Signs Input */}
                       <div className="mb-3 md:mb-4 p-2 md:p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="text-xs font-bold text-blue-800 mb-2">バイタルサイン</div>
@@ -1164,9 +1421,10 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                         </button>
                         <button
                           type="submit"
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs md:text-sm font-medium transition-colors shadow-sm"
+                          disabled={isSavingMedicalRecord}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded text-xs md:text-sm font-medium transition-colors shadow-sm"
                         >
-                          保存
+                          {isSavingMedicalRecord ? '保存中...' : '保存'}
                         </button>
                       </div>
                     </form>
@@ -1179,30 +1437,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-5 rounded-lg border-2 border-gray-300 shadow-sm">
                     <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">モニタリング記録入力</h3>
-                    <form onSubmit={(e) => {
-                      e.preventDefault();
-                      // Handle form submission
-                      console.log('Monitoring record:', monitoringRecord);
-                      alert('モニタリング記録を保存しました（開発中）');
-                      setMonitoringRecord({
-                        vitalSigns: {
-                          temperature: '',
-                          bloodPressure: '',
-                          heartRate: '',
-                          spO2: '',
-                          oxygenFlow: ''
-                        },
-                        weight: '',
-                        foodIntakeMorning: '',
-                        foodIntakeLunch: '',
-                        foodIntakeEvening: '',
-                        urineOutput: '',
-                        bowelMovementCount: '',
-                        urinationCount: '',
-                        drainOutput: '',
-                        other: ''
-                      });
-                    }} className="space-y-4">
+                    <form onSubmit={handleSaveMonitoringRecord} className="space-y-4">
                       {/* Vital Signs Input */}
                       <div className="mb-3 md:mb-4">
                         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
@@ -1308,7 +1543,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                             value={monitoringRecord.foodIntakeMorning}
                             onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeMorning: e.target.value })}
                             className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="g または %"
+                            placeholder="割"
                           />
                         </div>
                         <div>
@@ -1318,7 +1553,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                             value={monitoringRecord.foodIntakeLunch}
                             onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeLunch: e.target.value })}
                             className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="g または %"
+                            placeholder="割"
                           />
                         </div>
                         <div>
@@ -1328,7 +1563,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                             value={monitoringRecord.foodIntakeEvening}
                             onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeEvening: e.target.value })}
                             className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="g または %"
+                            placeholder="割"
                           />
                         </div>
                         <div>
@@ -1410,9 +1645,10 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                         </button>
                         <button
                           type="submit"
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs md:text-sm font-medium transition-colors shadow-sm"
+                          disabled={isSavingMonitoringRecord}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded text-xs md:text-sm font-medium transition-colors shadow-sm"
                         >
-                          保存
+                          {isSavingMonitoringRecord ? '保存中...' : '保存'}
                         </button>
                       </div>
                     </form>

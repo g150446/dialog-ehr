@@ -54,6 +54,9 @@ export interface Patient {
   // Medical Records
   medicalRecords?: MedicalRecord[];
   
+  // Monitoring Records
+  monitoringRecords?: MonitoringRecord[];
+  
   // Additional Medical Information
   chiefComplaint?: string;
   smokingHistory?: string;
@@ -107,6 +110,25 @@ export interface MedicalRecord {
   
   physician?: string;
   notes?: string;
+}
+
+export interface MonitoringRecord {
+  id: string;
+  date: string;
+  temperature?: number;
+  bloodPressure?: string;
+  heartRate?: number;
+  spO2?: number;
+  oxygenFlow?: number;
+  weight?: number;
+  foodIntakeMorning?: string;
+  foodIntakeLunch?: string;
+  foodIntakeEvening?: string;
+  urineOutput?: number;
+  bowelMovementCount?: number;
+  urinationCount?: number;
+  drainOutput?: number;
+  other?: string;
 }
 
 
