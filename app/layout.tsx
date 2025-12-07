@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import FloatingButton from './components/FloatingButton'
 
 export const metadata: Metadata = {
   title: 'Medical Record System',
@@ -19,7 +20,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        {children}
+        <FloatingButton />
+      </body>
     </html>
   )
 }
