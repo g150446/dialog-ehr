@@ -45,7 +45,8 @@ async function updateMonitoringFoodIntake() {
           data: updates,
         });
 
-        console.log(`Updated record ${record.id} (Date: ${record.date}):`);
+        const dateStr = record.date instanceof Date ? record.date.toISOString() : record.date;
+        console.log(`Updated record ${record.id} (Date: ${dateStr}):`);
         if (updates.foodIntakeMorning) console.log(`  朝: ${record.foodIntakeMorning} -> ${updates.foodIntakeMorning}`);
         if (updates.foodIntakeLunch) console.log(`  昼: ${record.foodIntakeLunch} -> ${updates.foodIntakeLunch}`);
         if (updates.foodIntakeEvening) console.log(`  夕: ${record.foodIntakeEvening} -> ${updates.foodIntakeEvening}`);

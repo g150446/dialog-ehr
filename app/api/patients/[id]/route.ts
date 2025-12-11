@@ -72,7 +72,7 @@ function transformPatient(patient: any): Patient {
     })) || undefined,
     monitoringRecords: patient.monitoringRecords?.map((mr: any) => ({
       id: mr.recordId || mr.id,
-      date: mr.date,
+      date: mr.date instanceof Date ? mr.date.toISOString() : mr.date,
       temperature: mr.temperature || undefined,
       bloodPressure: mr.bloodPressure || undefined,
       heartRate: mr.heartRate || undefined,

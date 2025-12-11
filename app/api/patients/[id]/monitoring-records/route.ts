@@ -6,7 +6,7 @@ import { MonitoringRecord } from '@/types/patient';
 function transformMonitoringRecord(mr: any): MonitoringRecord {
   return {
     id: mr.recordId || mr.id,
-    date: mr.date,
+    date: mr.date instanceof Date ? mr.date.toISOString() : mr.date,
     temperature: mr.temperature || undefined,
     bloodPressure: mr.bloodPressure || undefined,
     heartRate: mr.heartRate || undefined,
@@ -65,11 +65,16 @@ export async function POST(
     };
 
     // Create monitoring record
+    // Use current timestamp if date is provided as string, otherwise use the provided DateTime
+    const recordDate = recordData.date 
+      ? (typeof recordData.date === 'string' ? new Date(recordData.date) : recordData.date)
+      : new Date();
+    
     const monitoringRecord = await prisma.monitoringRecord.create({
       data: {
         patientId: id,
         recordId: recordData.recordId,
-        date: recordData.date,
+        date: recordDate,
         temperature: parseFloatOrUndefined(recordData.temperature),
         bloodPressure: stringOrUndefined(recordData.bloodPressure),
         heartRate: parseFloatOrUndefined(recordData.heartRate),

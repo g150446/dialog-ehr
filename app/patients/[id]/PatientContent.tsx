@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Patient, MedicalRecord, MonitoringRecord } from '@/types/patient';
+import VitalSignsChart from '@/app/components/VitalSignsChart';
 
 interface PatientContentProps {
   patient: Patient;
@@ -16,6 +17,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
   const [showPastRecordsOnly, setShowPastRecordsOnly] = useState(false);
   const [showMonitoring, setShowMonitoring] = useState(false);
+  const [showProgressChart, setShowProgressChart] = useState(false);
   const [isSavingMedicalRecord, setIsSavingMedicalRecord] = useState(false);
   const [isSavingMonitoringRecord, setIsSavingMonitoringRecord] = useState(false);
   
@@ -146,11 +148,12 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     setIsSavingMonitoringRecord(true);
 
     try {
-      const currentDate = new Date().toISOString().split('T')[0];
+      // Use current timestamp (date + time)
+      const currentDateTime = new Date().toISOString();
 
       const payload = {
         recordId: crypto.randomUUID(),
-        date: currentDate,
+        date: currentDateTime,
         temperature: monitoringRecord.vitalSigns.temperature || null,
         bloodPressure: monitoringRecord.vitalSigns.bloodPressure || null,
         heartRate: monitoringRecord.vitalSigns.heartRate || null,
@@ -329,10 +332,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setActiveView('medical-records');
                 setShowPastRecordsOnly(false);
                 setShowMonitoring(false);
+                setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
-                activeView === 'medical-records' && !showPastRecordsOnly && !showMonitoring
+                activeView === 'medical-records' && !showPastRecordsOnly && !showMonitoring && !showProgressChart
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
                   : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
               }`}
@@ -344,10 +348,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setActiveView('medical-records');
                 setShowPastRecordsOnly(true);
                 setShowMonitoring(false);
+                setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
-                activeView === 'medical-records' && showPastRecordsOnly && !showMonitoring
+                activeView === 'medical-records' && showPastRecordsOnly && !showMonitoring && !showProgressChart
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
                   : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
               }`}
@@ -359,10 +364,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setActiveView('medical-records');
                 setShowMonitoring(true);
                 setShowPastRecordsOnly(false);
+                setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
-                activeView === 'medical-records' && showMonitoring
+                activeView === 'medical-records' && showMonitoring && !showProgressChart
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
                   : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
               }`}
@@ -374,6 +380,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setActiveView('summary');
                 setShowPastRecordsOnly(false);
                 setShowMonitoring(false);
+                setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
@@ -390,7 +397,20 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
             <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
               指示簿
             </button>
-            <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
+            <button
+              onClick={() => {
+                setActiveView('medical-records');
+                setShowProgressChart(true);
+                setShowPastRecordsOnly(false);
+                setShowMonitoring(false);
+                setIsDrawerOpen(false);
+              }}
+              className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
+                activeView === 'medical-records' && showProgressChart
+                  ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
+                  : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
               経過表
             </button>
             <button className="px-3 py-1.5 bg-gray-200 border border-gray-400 rounded text-xs text-gray-700 hover:bg-gray-300 transition-colors">
@@ -401,6 +421,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setActiveView('patient-info');
                 setShowPastRecordsOnly(false);
                 setShowMonitoring(false);
+                setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
@@ -416,6 +437,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setActiveView('visit-history');
                 setShowPastRecordsOnly(false);
                 setShowMonitoring(false);
+                setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
@@ -806,9 +828,14 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
           {/* Medical Records Section */}
           {activeView === 'medical-records' && (
-            <div className={`${shouldUseTwoColumns && !showPastRecordsOnly && !showMonitoring ? 'flex gap-4' : ''} ${shouldUseTwoColumns && showMonitoring ? 'flex gap-4' : ''} ${showPastRecordsOnly ? 'flex-1 flex flex-col min-h-0' : ''}`}>
+            <div className={`${shouldUseTwoColumns && !showPastRecordsOnly && !showMonitoring && !showProgressChart ? 'flex gap-4' : ''} ${shouldUseTwoColumns && showMonitoring ? 'flex gap-4' : ''} ${showPastRecordsOnly ? 'flex-1 flex flex-col min-h-0' : ''}`}>
+              {/* Progress Chart Section */}
+              {showProgressChart && (
+                <VitalSignsChart records={patient.monitoringRecords || []} />
+              )}
+
               {/* Left Column: Summary + Past Records */}
-              {(shouldUseTwoColumns || showPastRecordsOnly) && !showMonitoring && (
+              {(shouldUseTwoColumns || showPastRecordsOnly) && !showMonitoring && !showProgressChart && (
                 <div className={showPastRecordsOnly ? 'w-full flex-1 flex flex-col min-h-0' : 'w-1/2'}>
                   {/* Summary Section */}
                   {!showPastRecordsOnly && patient.summary && (
@@ -1161,7 +1188,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               )}
 
               {/* Left Column: Past Monitoring Records (for monitoring view in landscape) */}
-              {showMonitoring && shouldUseTwoColumns && (
+              {showMonitoring && shouldUseTwoColumns && !showProgressChart && (
                 <div className="w-1/2 overflow-y-auto">
                   {/* Past Monitoring Records */}
                   {patient.monitoringRecords && patient.monitoringRecords.length > 0 ? (
@@ -1178,6 +1205,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                               day: 'numeric',
                               weekday: 'short'
                             });
+                            const timeStr = recordDate.toLocaleTimeString('ja-JP', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: false
+                            });
                             
                             return (
                               <div key={record.id} className="bg-white rounded-lg border-2 border-gray-300 shadow-sm p-3 md:p-5">
@@ -1187,7 +1219,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                     <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded">
                                       【モニタリング記録】
                                     </span>
-                                    <span className="font-bold text-gray-800">{dateStr}</span>
+                                    <span className="font-bold text-gray-800">{dateStr} {timeStr}</span>
                                   </div>
                                 </div>
 
@@ -1296,7 +1328,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               )}
 
               {/* Right Column: New Medical Record Input Form */}
-              {!showPastRecordsOnly && !showMonitoring && (
+              {!showPastRecordsOnly && !showMonitoring && !showProgressChart && (
               <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
                     <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">新規診療録入力</h3>
@@ -1433,7 +1465,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               )}
 
               {/* Monitoring Record Input Form */}
-              {showMonitoring && (
+              {showMonitoring && !showProgressChart && (
                 <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
                     <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">モニタリング記録入力</h3>

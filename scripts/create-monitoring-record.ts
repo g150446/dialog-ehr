@@ -73,30 +73,33 @@ async function createMonitoringRecord() {
     const [year, month, day] = admissionDateStr.split('/').map(Number);
     
     // Calculate day 1 date (admission date + 1 day) - 入院1日目は入院日の翌日
-    // Use Date object for calculation, then format as YYYY-MM-DD to avoid timezone issues
+    // Use Date object for calculation, then set time to 14:00 (2 PM) as example
     const admissionDate = new Date(year, month - 1, day);
     const day1Date = new Date(admissionDate);
     day1Date.setDate(day1Date.getDate() + 1);
-    
-    // Format as YYYY-MM-DD string directly
-    const day1Year = day1Date.getFullYear();
-    const day1Month = String(day1Date.getMonth() + 1).padStart(2, '0');
-    const day1Day = String(day1Date.getDate()).padStart(2, '0');
-    const day1DateString = `${day1Year}-${day1Month}-${day1Day}`;
+    day1Date.setHours(14, 0, 0, 0); // Set to 14:00 (2 PM) as example time
     
     console.log(`Admission date: ${year}/${month}/${day}`);
-    console.log(`Day 1 date (入院1日目): ${day1DateString}`);
+    console.log(`Day 1 date (入院1日目): ${day1Date.toISOString()}`);
 
-    // Check if day 1 record already exists
+    // Check if day 1 record already exists (check by date part only)
+    const day1DateStart = new Date(day1Date);
+    day1DateStart.setHours(0, 0, 0, 0);
+    const day1DateEnd = new Date(day1DateStart);
+    day1DateEnd.setHours(23, 59, 59, 999);
+    
     const existingRecord = await prisma.monitoringRecord.findFirst({
       where: {
         patientId: targetPatient.id,
-        date: day1DateString,
+        date: {
+          gte: day1DateStart,
+          lte: day1DateEnd,
+        },
       },
     });
 
     if (existingRecord) {
-      console.log(`Day 1 monitoring record already exists for ${day1DateString}`);
+      console.log(`Day 1 monitoring record already exists for ${day1Date.toISOString()}`);
       console.log('Deleting existing record to recreate with correct data...');
       await prisma.monitoringRecord.delete({
         where: {
@@ -110,7 +113,7 @@ async function createMonitoringRecord() {
       data: {
         patientId: targetPatient.id,
         recordId: `MON-${Date.now()}`,
-        date: day1DateString,
+        date: day1Date,
         // Vital Signs
         temperature: 36.8,
         bloodPressure: '120/80',
@@ -132,7 +135,7 @@ async function createMonitoringRecord() {
 
     console.log('\n✅ Successfully created day 1 monitoring record:');
     console.log('Record ID:', monitoringRecord.id);
-    console.log('Date:', monitoringRecord.date);
+    console.log('Date:', monitoringRecord.date instanceof Date ? monitoringRecord.date.toISOString() : monitoringRecord.date);
     console.log('Temperature:', monitoringRecord.temperature, '°C');
     console.log('Blood Pressure:', monitoringRecord.bloodPressure, 'mmHg');
     console.log('Heart Rate:', monitoringRecord.heartRate, 'bpm');

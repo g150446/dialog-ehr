@@ -138,7 +138,7 @@ model MonitoringRecord {
   id                    String   @id @default(uuid())
   patientId             String
   recordId              String
-  date                  String
+  date                  DateTime
   
   // Vital Signs (as separate columns for query performance)
   temperature           Float?

@@ -12,3 +12,11 @@ export const prisma =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
+// Helper to reset connection (useful after schema changes)
+export async function resetPrismaConnection() {
+  if (globalForPrisma.prisma) {
+    await globalForPrisma.prisma.$disconnect();
+    globalForPrisma.prisma = undefined;
+  }
+}
+

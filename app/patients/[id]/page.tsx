@@ -80,7 +80,7 @@ function transformPatient(patient: any): Patient {
     })) || undefined,
     monitoringRecords: patient.monitoringRecords?.map((mr: any) => ({
       id: mr.recordId || mr.id,
-      date: mr.date,
+      date: mr.date instanceof Date ? mr.date.toISOString() : mr.date,
       temperature: mr.temperature || undefined,
       bloodPressure: mr.bloodPressure || undefined,
       heartRate: mr.heartRate || undefined,
@@ -130,7 +130,13 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
     }
 
     patient = transformPatient(dbPatient);
-  } catch (error) {
+  } catch (error: any) {
+    // Handle PostgreSQL cached plan error after schema changes
+    if (error?.code === '0A000' || error?.message?.includes('cached plan must not change result type')) {
+      console.error('⚠️  Database schema has changed. Please restart your Next.js dev server.');
+      console.error('Error details:', error.message);
+      throw new Error('Database schema has changed. Please restart the dev server (npm run dev).');
+    }
     console.error('Failed to load patient:', error);
     notFound();
   }
