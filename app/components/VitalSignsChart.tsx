@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  TooltipProps,
 } from 'recharts';
 import { MonitoringRecord } from '@/types/patient';
 
@@ -18,7 +19,8 @@ interface VitalSignsChartProps {
 }
 
 interface ChartDataPoint {
-  date: string;
+  dateTime: number; // 一意の識別子（タイムスタンプ）
+  date: string; // 表示用の日付
   temperature?: number;
   systolic?: number;
   diastolic?: number;
@@ -39,7 +41,7 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
     return (
       <div className="w-full max-w-6xl mx-auto p-6 bg-gray-50">
         <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          バイタルサイン推移グラフ
+          経過表
         </h1>
         <div className="bg-white rounded-lg shadow-sm p-8 text-center">
           <p className="text-gray-600">モニタリングデータがありません。</p>
@@ -53,8 +55,29 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
+  // 日付範囲を取得（タイトル用）
+  const startDate = new Date(sortedRecords[0].date);
+  const endDate = new Date(sortedRecords[sortedRecords.length - 1].date);
+  
+  const formatDateForTitle = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}年${month}月${day}日`;
+  };
+
+  const titleText = `経過表(${formatDateForTitle(startDate)}から${formatDateForTitle(endDate)})`;
+
+  // 日付を正規化（時刻を0:00:00にして日付のみを取得）
+  const normalizeDateToMidnight = (dateString: string): Date => {
+    const date = new Date(dateString);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  };
+
   const chartData: ChartDataPoint[] = sortedRecords.map((record) => {
     const date = new Date(record.date);
+    const dateTime = date.getTime(); // 一意の識別子として元のタイムスタンプを使用
+    // 1日単位で表示するため、日付のみを使用（時刻は無視）
     const shortDate = `${date.getMonth() + 1}/${date.getDate()}`;
 
     // 血圧を収縮期/拡張期に分割
@@ -69,6 +92,7 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
     }
 
     return {
+      dateTime,
       date: shortDate,
       temperature: record.temperature,
       systolic,
@@ -85,10 +109,28 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
     };
   });
 
+  // ユニークな日付のticksを計算（X軸に表示する日付のリスト）
+  const uniqueDateMap = new Map<string, number>();
+  chartData.forEach((point) => {
+    const normalizedDate = normalizeDateToMidnight(new Date(point.dateTime).toISOString());
+    const dateKey = point.date;
+    if (!uniqueDateMap.has(dateKey)) {
+      // その日の最初のデータポイントのタイムスタンプを使用
+      uniqueDateMap.set(dateKey, normalizedDate.getTime());
+    }
+  });
+  const uniqueDateTicks = Array.from(uniqueDateMap.values());
+
+  // タイムスタンプを日付表示に変換する関数
+  const formatTimestampToShortDate = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto p-6 bg-gray-50">
       <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
-        バイタルサイン推移グラフ
+        {titleText}
       </h1>
 
       {/* 体温グラフ */}
@@ -98,7 +140,11 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
             <XAxis
-              dataKey="date"
+              dataKey="dateTime"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              ticks={uniqueDateTicks}
+              tickFormatter={formatTimestampToShortDate}
               tick={{ fontSize: 12 }}
               stroke="#666"
             />
@@ -108,10 +154,11 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
               tick={{ fontSize: 12 }}
               stroke="#666"
             />
-            <Tooltip />
+            <Tooltip content={<CustomTooltip />} />
             <Line
               type="monotone"
               dataKey="temperature"
+              name="体温"
               stroke="#e91e63"
               strokeWidth={2.5}
               dot={{ fill: '#e91e63', r: 4 }}
@@ -128,7 +175,11 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
             <XAxis
-              dataKey="date"
+              dataKey="dateTime"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              ticks={uniqueDateTicks}
+              tickFormatter={formatTimestampToShortDate}
               tick={{ fontSize: 12 }}
               stroke="#666"
             />
@@ -138,7 +189,7 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
               tick={{ fontSize: 12 }}
               stroke="#666"
             />
-            <Tooltip />
+            <Tooltip content={<CustomTooltip />} />
             <Legend
               wrapperStyle={{ fontSize: '12px' }}
               iconType="line"
@@ -172,7 +223,11 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
             <XAxis
-              dataKey="date"
+              dataKey="dateTime"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              ticks={uniqueDateTicks}
+              tickFormatter={formatTimestampToShortDate}
               tick={{ fontSize: 12 }}
               stroke="#666"
             />
@@ -182,10 +237,11 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
               tick={{ fontSize: 12 }}
               stroke="#666"
             />
-            <Tooltip />
+            <Tooltip content={<CustomTooltip />} />
             <Line
               type="monotone"
               dataKey="pulse"
+              name="脈拍"
               stroke="#3498db"
               strokeWidth={2.5}
               dot={{ fill: '#3498db', r: 4 }}
@@ -285,5 +341,27 @@ function DataRow({ label, values, isEven }: DataRowProps) {
       ))}
     </tr>
   );
+}
+
+// カスタムTooltipコンポーネント
+function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
+  if (active && payload && payload.length) {
+    // dateTimeを日付と時間にフォーマット
+    const dateTime = payload[0].payload.dateTime;
+    const date = new Date(dateTime);
+    const formattedDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+
+    return (
+      <div className="bg-white border border-gray-300 rounded shadow-lg p-3">
+        <p className="text-sm font-semibold text-gray-700 mb-2">{formattedDate}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name || entry.dataKey}: {entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
 }
 
