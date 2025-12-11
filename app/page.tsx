@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { Patient, Visit, MedicalRecord } from '@/types/patient';
+import PatientSearchModal from '@/app/components/PatientSearchModal';
 
 // Helper function to transform Prisma patient to Patient type
 function transformPatient(patient: any): Patient {
@@ -111,6 +112,7 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto flex-wrap">
+          <PatientSearchModal />
           <button className="px-3 md:px-4 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs md:text-sm text-gray-700 font-medium shadow-sm transition-colors">
             ログアウト
           </button>
