@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { Patient, Visit, MedicalRecord } from '@/types/patient';
+import { Prisma } from '@prisma/client';
 
 // Helper function to transform Prisma patient to Patient type
 function transformPatient(patient: any): Patient {
@@ -75,7 +76,47 @@ function transformPatient(patient: any): Patient {
 
 export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const query = searchParams.get('query');
+
+    let whereClause: any = {};
+
+    if (query && query.trim()) {
+      const searchQuery = query.trim();
+      
+      // Helper function to convert Japanese era to Western year
+      const convertEraToYear = (dateStr: string): string | null => {
+        const eraMatch = dateStr.match(/^([HSMR])(\d+)\/(\d+)\/(\d+)$/);
+        if (eraMatch) {
+          const [, era, year, month, day] = eraMatch;
+          let baseYear = 0;
+          if (era === 'H' || era === 'h') baseYear = 1988; // Heisei
+          else if (era === 'S' || era === 's') baseYear = 1925; // Showa
+          else if (era === 'M' || era === 'm') baseYear = 1867; // Meiji
+          else if (era === 'R' || era === 'r') baseYear = 2018; // Reiwa
+          const westernYear = baseYear + parseInt(year);
+          return `${westernYear}/${month}/${day}`;
+        }
+        return null;
+      };
+
+      // Try to convert era date format
+      const convertedDate = convertEraToYear(searchQuery);
+      const dateToSearch = convertedDate || searchQuery;
+
+      whereClause = {
+        OR: [
+          { patientCode: { contains: searchQuery, mode: Prisma.QueryMode.insensitive } },
+          { nameKana: { contains: searchQuery, mode: Prisma.QueryMode.insensitive } },
+          { name: { contains: searchQuery, mode: Prisma.QueryMode.insensitive } },
+          { dateOfBirth: { contains: dateToSearch, mode: Prisma.QueryMode.insensitive } },
+          { department: { contains: searchQuery, mode: Prisma.QueryMode.insensitive } },
+        ],
+      };
+    }
+
     const patients = await prisma.patient.findMany({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
         visits: {
           orderBy: {

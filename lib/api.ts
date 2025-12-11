@@ -50,4 +50,19 @@ export async function saveMedicalRecord(patientId: string, record: MedicalRecord
   }
 }
 
+export async function searchPatients(query: string): Promise<Patient[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients?query=${encodeURIComponent(query)}`, {
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to search patients');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error searching patients:', error);
+    throw error;
+  }
+}
+
 
