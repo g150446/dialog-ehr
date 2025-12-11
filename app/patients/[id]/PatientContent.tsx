@@ -373,7 +373,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                   : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              モニタリング記録
+              新規モニタリング記録
             </button>
             <button
               onClick={() => {
@@ -1468,7 +1468,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               {showMonitoring && !showProgressChart && (
                 <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
-                    <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">モニタリング記録入力</h3>
+                    <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">新規モニタリング記録入力</h3>
                     <form onSubmit={handleSaveMonitoringRecord} className="space-y-4">
                       {/* Vital Signs Input */}
                       <div className="mb-3 md:mb-4">
