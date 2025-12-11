@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Patient, MedicalRecord, MonitoringRecord } from '@/types/patient';
 import VitalSignsChart from '@/app/components/VitalSignsChart';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import TextField from '@mui/material/TextField';
+import dayjs, { Dayjs } from 'dayjs';
 
 interface PatientContentProps {
   patient: Patient;
@@ -17,6 +22,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
   const [showPastRecordsOnly, setShowPastRecordsOnly] = useState(false);
   const [showMonitoring, setShowMonitoring] = useState(false);
+  const [showPastMonitoring, setShowPastMonitoring] = useState(false);
   const [showProgressChart, setShowProgressChart] = useState(false);
   const [isSavingMedicalRecord, setIsSavingMedicalRecord] = useState(false);
   const [isSavingMonitoringRecord, setIsSavingMonitoringRecord] = useState(false);
@@ -51,6 +57,12 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     urinationCount: '',
     drainOutput: '',
     other: ''
+  });
+
+  // State for past monitoring record date/time
+  const [pastMonitoringDateTime, setPastMonitoringDateTime] = useState({
+    date: '',
+    time: ''
   });
 
   // State for summary input (questions/updates)
@@ -148,12 +160,37 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     setIsSavingMonitoringRecord(true);
 
     try {
-      // Use current timestamp (date + time)
-      const currentDateTime = new Date().toISOString();
+      let recordDateTime: string;
+
+      // For past monitoring records, use the specified date and time
+      if (showPastMonitoring) {
+        // Validate date and time are provided
+        if (!pastMonitoringDateTime.date || !pastMonitoringDateTime.time) {
+          alert('記録日付と記録時間を入力してください。');
+          setIsSavingMonitoringRecord(false);
+          return;
+        }
+
+        // Combine date and time and convert to ISO format
+        const dateTimeString = `${pastMonitoringDateTime.date}T${pastMonitoringDateTime.time}:00`;
+        const dateTimeObject = new Date(dateTimeString);
+        
+        // Validate that the date/time is not in the future
+        if (dateTimeObject > new Date()) {
+          alert('未来の日時は入力できません。');
+          setIsSavingMonitoringRecord(false);
+          return;
+        }
+        
+        recordDateTime = dateTimeObject.toISOString();
+      } else {
+        // For new monitoring records, use current timestamp
+        recordDateTime = new Date().toISOString();
+      }
 
       const payload = {
         recordId: crypto.randomUUID(),
-        date: currentDateTime,
+        date: recordDateTime,
         temperature: monitoringRecord.vitalSigns.temperature || null,
         bloodPressure: monitoringRecord.vitalSigns.bloodPressure || null,
         heartRate: monitoringRecord.vitalSigns.heartRate || null,
@@ -201,6 +238,14 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
         drainOutput: '',
         other: ''
       });
+
+      // Reset past monitoring date/time if applicable
+      if (showPastMonitoring) {
+        setPastMonitoringDateTime({
+          date: '',
+          time: ''
+        });
+      }
 
       // Reload page to show updated data
       window.location.reload();
@@ -332,11 +377,12 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setActiveView('medical-records');
                 setShowPastRecordsOnly(false);
                 setShowMonitoring(false);
+                setShowPastMonitoring(false);
                 setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
-                activeView === 'medical-records' && !showPastRecordsOnly && !showMonitoring && !showProgressChart
+                activeView === 'medical-records' && !showPastRecordsOnly && !showMonitoring && !showPastMonitoring && !showProgressChart
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
                   : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
               }`}
@@ -348,6 +394,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setActiveView('medical-records');
                 setShowPastRecordsOnly(true);
                 setShowMonitoring(false);
+                setShowPastMonitoring(false);
                 setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
@@ -363,12 +410,13 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               onClick={() => {
                 setActiveView('medical-records');
                 setShowMonitoring(true);
+                setShowPastMonitoring(false);
                 setShowPastRecordsOnly(false);
                 setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
-                activeView === 'medical-records' && showMonitoring && !showProgressChart
+                activeView === 'medical-records' && showMonitoring && !showPastMonitoring && !showProgressChart
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
                   : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
               }`}
@@ -377,9 +425,27 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
             </button>
             <button
               onClick={() => {
+                setActiveView('medical-records');
+                setShowMonitoring(false);
+                setShowPastMonitoring(true);
+                setShowPastRecordsOnly(false);
+                setShowProgressChart(false);
+                setIsDrawerOpen(false);
+              }}
+              className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
+                activeView === 'medical-records' && showPastMonitoring && !showProgressChart
+                  ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
+                  : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              過去モニタリング記録
+            </button>
+            <button
+              onClick={() => {
                 setActiveView('summary');
                 setShowPastRecordsOnly(false);
                 setShowMonitoring(false);
+                setShowPastMonitoring(false);
                 setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
@@ -403,6 +469,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setShowProgressChart(true);
                 setShowPastRecordsOnly(false);
                 setShowMonitoring(false);
+                setShowPastMonitoring(false);
                 setIsDrawerOpen(false);
               }}
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
@@ -421,6 +488,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 setActiveView('patient-info');
                 setShowPastRecordsOnly(false);
                 setShowMonitoring(false);
+                setShowPastMonitoring(false);
                 setShowProgressChart(false);
                 setIsDrawerOpen(false);
               }}
@@ -828,14 +896,14 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
           {/* Medical Records Section */}
           {activeView === 'medical-records' && (
-            <div className={`${shouldUseTwoColumns && !showPastRecordsOnly && !showMonitoring && !showProgressChart ? 'flex gap-4' : ''} ${shouldUseTwoColumns && showMonitoring ? 'flex gap-4' : ''} ${showPastRecordsOnly ? 'flex-1 flex flex-col min-h-0' : ''}`}>
+            <div className={`${shouldUseTwoColumns && !showPastRecordsOnly && !showMonitoring && !showPastMonitoring && !showProgressChart ? 'flex gap-4' : ''} ${shouldUseTwoColumns && (showMonitoring || showPastMonitoring) ? 'flex gap-4' : ''} ${showPastRecordsOnly ? 'flex-1 flex flex-col min-h-0' : ''}`}>
               {/* Progress Chart Section */}
               {showProgressChart && (
                 <VitalSignsChart records={patient.monitoringRecords || []} />
               )}
 
               {/* Left Column: Summary + Past Records */}
-              {(shouldUseTwoColumns || showPastRecordsOnly) && !showMonitoring && !showProgressChart && (
+              {(shouldUseTwoColumns || showPastRecordsOnly) && !showMonitoring && !showPastMonitoring && !showProgressChart && (
                 <div className={showPastRecordsOnly ? 'w-full flex-1 flex flex-col min-h-0' : 'w-1/2'}>
                   {/* Summary Section */}
                   {!showPastRecordsOnly && patient.summary && (
@@ -1187,13 +1255,517 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 </div>
               )}
 
-              {/* Left Column: Past Monitoring Records (for monitoring view in landscape) */}
-              {showMonitoring && shouldUseTwoColumns && !showProgressChart && (
-                <div className="w-1/2 overflow-y-auto">
-                  {/* Past Monitoring Records */}
-                  {patient.monitoringRecords && patient.monitoringRecords.length > 0 ? (
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
-                      <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去のモニタリング記録</h3>
+              {/* Past Monitoring Records (for monitoring view) */}
+              {(showMonitoring || showPastMonitoring) && !showProgressChart && (
+                <>
+                  {/* Input Forms (portrait) - shown first in portrait mode */}
+                  {!shouldUseTwoColumns && showMonitoring && (
+                    <div className="w-full mb-4">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
+                        <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">新規モニタリング記録入力</h3>
+                        <form onSubmit={handleSaveMonitoringRecord} className="space-y-4">
+                          {/* Vital Signs Input */}
+                          <div className="mb-3 md:mb-4">
+                            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
+                              <div>
+                                <label className="block text-gray-600 mb-1">体温:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.temperature}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      temperature: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="℃"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-600 mb-1">血圧:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.bloodPressure}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      bloodPressure: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="mmHg"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-600 mb-1">心拍数:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.heartRate}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      heartRate: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="bpm"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-600 mb-1">SpO2:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.spO2}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      spO2: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="%"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-600 mb-1">酸素流量:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.oxygenFlow}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      oxygenFlow: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="L/min"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Monitoring Input Fields */}
+                          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
+                            <div>
+                              <label className="block text-gray-600 mb-1">体重:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.weight}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, weight: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="kg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">食事量(朝):</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.foodIntakeMorning}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeMorning: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="割"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">食事量(昼):</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.foodIntakeLunch}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeLunch: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="割"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">食事量(夕):</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.foodIntakeEvening}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeEvening: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="割"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">尿量:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.urineOutput}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, urineOutput: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="ml"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">排便回数:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.bowelMovementCount}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, bowelMovementCount: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="回"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">排尿回数:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.urinationCount}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, urinationCount: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="回"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">ドレーン廃液量:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.drainOutput}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, drainOutput: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="ml"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <label className="block text-gray-600 mb-1 text-xs md:text-sm">その他:</label>
+                            <textarea
+                              value={monitoringRecord.other}
+                              onChange={(e) => setMonitoringRecord({ ...monitoringRecord, other: e.target.value })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[100px]"
+                              placeholder="その他の情報を入力してください"
+                            />
+                          </div>
+
+                          {/* Submit Button */}
+                          <div className="flex justify-end gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => setMonitoringRecord({
+                                vitalSigns: {
+                                  temperature: '',
+                                  bloodPressure: '',
+                                  heartRate: '',
+                                  spO2: '',
+                                  oxygenFlow: ''
+                                },
+                                weight: '',
+                                foodIntakeMorning: '',
+                                foodIntakeLunch: '',
+                                foodIntakeEvening: '',
+                                urineOutput: '',
+                                bowelMovementCount: '',
+                                urinationCount: '',
+                                drainOutput: '',
+                                other: ''
+                              })}
+                              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs md:text-sm font-medium transition-colors"
+                            >
+                              クリア
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={isSavingMonitoringRecord}
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded text-xs md:text-sm font-medium transition-colors shadow-sm"
+                            >
+                              {isSavingMonitoringRecord ? '保存中...' : '保存'}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+
+                  {!shouldUseTwoColumns && showPastMonitoring && (
+                    <div className="w-full mb-4">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
+                        <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去モニタリング記録入力</h3>
+                        <form onSubmit={handleSaveMonitoringRecord} className="space-y-4">
+                          {/* Date and Time Input */}
+                          <div className="mb-3 md:mb-4 bg-blue-50 p-3 rounded border border-blue-200">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs md:text-sm">
+                              <div>
+                                <label className="block text-gray-700 font-semibold mb-2">記録日付:</label>
+                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                  <DatePicker
+                                    value={pastMonitoringDateTime.date ? dayjs(pastMonitoringDateTime.date) : null}
+                                    onChange={(newValue: Dayjs | null) => {
+                                      setPastMonitoringDateTime({
+                                        ...pastMonitoringDateTime,
+                                        date: newValue ? newValue.format('YYYY-MM-DD') : ''
+                                      });
+                                    }}
+                                    maxDate={dayjs()}
+                                    format="YYYY/MM/DD"
+                                    slotProps={{
+                                      textField: {
+                                        size: 'small',
+                                        sx: {
+                                          '& .MuiInputBase-root': {
+                                            fontSize: '0.875rem',
+                                            backgroundColor: 'white',
+                                          },
+                                          '& .MuiInputBase-input': {
+                                            padding: '8px 12px',
+                                          }
+                                        }
+                                      }
+                                    }}
+                                  />
+                                </LocalizationProvider>
+                              </div>
+                              <div>
+                                <label className="block text-gray-700 font-semibold mb-2">記録時間:</label>
+                                <input
+                                  type="time"
+                                  value={pastMonitoringDateTime.time}
+                                  onChange={(e) => setPastMonitoringDateTime({
+                                    ...pastMonitoringDateTime,
+                                    time: e.target.value
+                                  })}
+                                  className="w-full px-2 py-2 bg-white border border-gray-300 rounded text-gray-800 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Vital Signs Input */}
+                          <div className="mb-3 md:mb-4">
+                            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
+                              <div>
+                                <label className="block text-gray-600 mb-1">体温:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.temperature}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      temperature: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="℃"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-600 mb-1">血圧:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.bloodPressure}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      bloodPressure: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="mmHg"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-600 mb-1">心拍数:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.heartRate}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      heartRate: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="bpm"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-600 mb-1">SpO2:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.spO2}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      spO2: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="%"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-600 mb-1">酸素流量:</label>
+                                <input
+                                  type="text"
+                                  value={monitoringRecord.vitalSigns.oxygenFlow}
+                                  onChange={(e) => setMonitoringRecord({
+                                    ...monitoringRecord,
+                                    vitalSigns: {
+                                      ...monitoringRecord.vitalSigns,
+                                      oxygenFlow: e.target.value
+                                    }
+                                  })}
+                                  className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="L/min"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Monitoring Input Fields */}
+                          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
+                            <div>
+                              <label className="block text-gray-600 mb-1">体重:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.weight}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, weight: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="kg"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">食事量(朝):</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.foodIntakeMorning}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeMorning: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="割"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">食事量(昼):</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.foodIntakeLunch}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeLunch: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="割"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">食事量(夕):</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.foodIntakeEvening}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeEvening: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="割"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">尿量:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.urineOutput}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, urineOutput: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="ml"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">排便回数:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.bowelMovementCount}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, bowelMovementCount: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="回"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">排尿回数:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.urinationCount}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, urinationCount: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="回"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-600 mb-1">ドレーン廃液量:</label>
+                              <input
+                                type="text"
+                                value={monitoringRecord.drainOutput}
+                                onChange={(e) => setMonitoringRecord({ ...monitoringRecord, drainOutput: e.target.value })}
+                                className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="ml"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <label className="block text-gray-600 mb-1 text-xs md:text-sm">その他:</label>
+                            <textarea
+                              value={monitoringRecord.other}
+                              onChange={(e) => setMonitoringRecord({ ...monitoringRecord, other: e.target.value })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[100px]"
+                              placeholder="その他の情報を入力してください"
+                            />
+                          </div>
+
+                          {/* Submit Button */}
+                          <div className="flex justify-end gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMonitoringRecord({
+                                  vitalSigns: {
+                                    temperature: '',
+                                    bloodPressure: '',
+                                    heartRate: '',
+                                    spO2: '',
+                                    oxygenFlow: ''
+                                  },
+                                  weight: '',
+                                  foodIntakeMorning: '',
+                                  foodIntakeLunch: '',
+                                  foodIntakeEvening: '',
+                                  urineOutput: '',
+                                  bowelMovementCount: '',
+                                  urinationCount: '',
+                                  drainOutput: '',
+                                  other: ''
+                                });
+                                setPastMonitoringDateTime({
+                                  date: '',
+                                  time: ''
+                                });
+                              }}
+                              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs md:text-sm font-medium transition-colors"
+                            >
+                              クリア
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={isSavingMonitoringRecord}
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded text-xs md:text-sm font-medium transition-colors shadow-sm"
+                            >
+                              {isSavingMonitoringRecord ? '保存中...' : '保存'}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Left Column: Past Monitoring Records (landscape) */}
+                  {shouldUseTwoColumns && (
+                    <div className="w-1/2 overflow-y-auto">
+                      {/* Past Monitoring Records */}
+                      {patient.monitoringRecords && patient.monitoringRecords.length > 0 ? (
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
+                          <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去のモニタリング記録</h3>
                       <div className="space-y-5 max-h-[calc(100vh-400px)] overflow-y-auto">
                         {patient.monitoringRecords
                           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -1324,11 +1896,153 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                       <p className="text-xs md:text-sm text-gray-600">過去のモニタリング記録はありません。</p>
                     </div>
                   )}
-                </div>
+                    </div>
+                  )}
+
+                  {/* Past Monitoring Records (portrait) - shown after input forms */}
+                  {!shouldUseTwoColumns && (
+                    <div className="w-full">
+                      {/* Past Monitoring Records */}
+                      {patient.monitoringRecords && patient.monitoringRecords.length > 0 ? (
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
+                          <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去のモニタリング記録</h3>
+                          <div className="space-y-5 max-h-[calc(100vh-400px)] overflow-y-auto">
+                            {patient.monitoringRecords
+                              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                              .map((record) => {
+                                const recordDate = new Date(record.date);
+                                const dateStr = recordDate.toLocaleDateString('ja-JP', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  weekday: 'short'
+                                });
+                                const timeStr = recordDate.toLocaleTimeString('ja-JP', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false
+                                });
+                                
+                                return (
+                                  <div key={record.id} className="bg-white rounded-lg border-2 border-gray-300 shadow-sm p-3 md:p-5">
+                                    {/* Record Header */}
+                                    <div className="mb-3 md:mb-4 pb-2 md:pb-3 border-b-2 border-gray-400">
+                                      <div className="flex items-center gap-3">
+                                        <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded">
+                                          【モニタリング記録】
+                                        </span>
+                                        <span className="font-bold text-gray-800">{dateStr} {timeStr}</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Monitoring Data */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
+                                      {/* Vital Signs */}
+                                      {record.temperature && (
+                                        <div>
+                                          <span className="text-gray-600">体温:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.temperature}°C</span>
+                                        </div>
+                                      )}
+                                      {record.bloodPressure && (
+                                        <div>
+                                          <span className="text-gray-600">血圧:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.bloodPressure}mmHg</span>
+                                        </div>
+                                      )}
+                                      {record.heartRate && (
+                                        <div>
+                                          <span className="text-gray-600">心拍数:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.heartRate}bpm</span>
+                                        </div>
+                                      )}
+                                      {record.spO2 && (
+                                        <div>
+                                          <span className="text-gray-600">SpO2:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.spO2}%</span>
+                                        </div>
+                                      )}
+                                      {record.oxygenFlow && (
+                                        <div>
+                                          <span className="text-gray-600">酸素流量:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.oxygenFlow}L/min</span>
+                                        </div>
+                                      )}
+                                      {/* Other Monitoring Data */}
+                                      {record.weight && (
+                                        <div>
+                                          <span className="text-gray-600">体重:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.weight}kg</span>
+                                        </div>
+                                      )}
+                                      {record.foodIntakeMorning && (
+                                        <div>
+                                          <span className="text-gray-600">食事量(朝):</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.foodIntakeMorning}</span>
+                                        </div>
+                                      )}
+                                      {record.foodIntakeLunch && (
+                                        <div>
+                                          <span className="text-gray-600">食事量(昼):</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.foodIntakeLunch}</span>
+                                        </div>
+                                      )}
+                                      {record.foodIntakeEvening && (
+                                        <div>
+                                          <span className="text-gray-600">食事量(夕):</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.foodIntakeEvening}</span>
+                                        </div>
+                                      )}
+                                      {record.urineOutput && (
+                                        <div>
+                                          <span className="text-gray-600">尿量:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.urineOutput}ml</span>
+                                        </div>
+                                      )}
+                                      {record.bowelMovementCount && (
+                                        <div>
+                                          <span className="text-gray-600">排便回数:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.bowelMovementCount}回</span>
+                                        </div>
+                                      )}
+                                      {record.urinationCount && (
+                                        <div>
+                                          <span className="text-gray-600">排尿回数:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.urinationCount}回</span>
+                                        </div>
+                                      )}
+                                      {record.drainOutput && (
+                                        <div>
+                                          <span className="text-gray-600">ドレーン廃液量:</span>
+                                          <span className="ml-1 font-medium text-gray-800">{record.drainOutput}ml</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Other Notes */}
+                                    {record.other && (
+                                      <div className="mt-3 md:mt-4 pt-3 border-t border-gray-300">
+                                        <div className="text-xs font-bold text-gray-600 mb-1">その他:</div>
+                                        <div className="text-xs md:text-sm text-gray-700 whitespace-pre-line">{record.other}</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
+                          <p className="text-xs md:text-sm text-gray-600">過去のモニタリング記録はありません。</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Right Column: New Medical Record Input Form */}
-              {!showPastRecordsOnly && !showMonitoring && !showProgressChart && (
+              {!showPastRecordsOnly && !showMonitoring && !showPastMonitoring && !showProgressChart && (
               <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
                     <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">新規診療録入力</h3>
@@ -1464,9 +2178,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 </div>
               )}
 
-              {/* Monitoring Record Input Form */}
-              {showMonitoring && !showProgressChart && (
-                <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
+              {/* Monitoring Record Input Form (landscape only) */}
+              {showMonitoring && !showProgressChart && shouldUseTwoColumns && (
+                <div className="w-1/2">
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
                     <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">新規モニタリング記録入力</h3>
                     <form onSubmit={handleSaveMonitoringRecord} className="space-y-4">
@@ -1671,6 +2385,284 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                             drainOutput: '',
                             other: ''
                           })}
+                          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs md:text-sm font-medium transition-colors"
+                        >
+                          クリア
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSavingMonitoringRecord}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded text-xs md:text-sm font-medium transition-colors shadow-sm"
+                        >
+                          {isSavingMonitoringRecord ? '保存中...' : '保存'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Past Monitoring Record Input Form (landscape only) */}
+              {showPastMonitoring && !showProgressChart && shouldUseTwoColumns && (
+                <div className="w-1/2">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
+                    <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去モニタリング記録入力</h3>
+                    <form onSubmit={handleSaveMonitoringRecord} className="space-y-4">
+                      {/* Date and Time Input */}
+                      <div className="mb-3 md:mb-4 bg-blue-50 p-3 rounded border border-blue-200">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs md:text-sm">
+                          <div>
+                            <label className="block text-gray-700 font-semibold mb-2">記録日付:</label>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                              <DatePicker
+                                value={pastMonitoringDateTime.date ? dayjs(pastMonitoringDateTime.date) : null}
+                                onChange={(newValue: Dayjs | null) => {
+                                  setPastMonitoringDateTime({
+                                    ...pastMonitoringDateTime,
+                                    date: newValue ? newValue.format('YYYY-MM-DD') : ''
+                                  });
+                                }}
+                                maxDate={dayjs()}
+                                format="YYYY/MM/DD"
+                                slotProps={{
+                                  textField: {
+                                    size: 'small',
+                                    sx: {
+                                      '& .MuiInputBase-root': {
+                                        fontSize: '0.875rem',
+                                        backgroundColor: 'white',
+                                      },
+                                      '& .MuiInputBase-input': {
+                                        padding: '8px 12px',
+                                      }
+                                    }
+                                  }
+                                }}
+                              />
+                            </LocalizationProvider>
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 font-semibold mb-2">記録時間:</label>
+                            <input
+                              type="time"
+                              value={pastMonitoringDateTime.time}
+                              onChange={(e) => setPastMonitoringDateTime({
+                                ...pastMonitoringDateTime,
+                                time: e.target.value
+                              })}
+                              className="w-full px-2 py-2 bg-white border border-gray-300 rounded text-gray-800 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Vital Signs Input */}
+                      <div className="mb-3 md:mb-4">
+                        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
+                          <div>
+                            <label className="block text-gray-600 mb-1">体温:</label>
+                            <input
+                              type="text"
+                              value={monitoringRecord.vitalSigns.temperature}
+                              onChange={(e) => setMonitoringRecord({
+                                ...monitoringRecord,
+                                vitalSigns: {
+                                  ...monitoringRecord.vitalSigns,
+                                  temperature: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="℃"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-600 mb-1">血圧:</label>
+                            <input
+                              type="text"
+                              value={monitoringRecord.vitalSigns.bloodPressure}
+                              onChange={(e) => setMonitoringRecord({
+                                ...monitoringRecord,
+                                vitalSigns: {
+                                  ...monitoringRecord.vitalSigns,
+                                  bloodPressure: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="mmHg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-600 mb-1">心拍数:</label>
+                            <input
+                              type="text"
+                              value={monitoringRecord.vitalSigns.heartRate}
+                              onChange={(e) => setMonitoringRecord({
+                                ...monitoringRecord,
+                                vitalSigns: {
+                                  ...monitoringRecord.vitalSigns,
+                                  heartRate: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="bpm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-600 mb-1">SpO2:</label>
+                            <input
+                              type="text"
+                              value={monitoringRecord.vitalSigns.spO2}
+                              onChange={(e) => setMonitoringRecord({
+                                ...monitoringRecord,
+                                vitalSigns: {
+                                  ...monitoringRecord.vitalSigns,
+                                  spO2: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="%"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-600 mb-1">酸素流量:</label>
+                            <input
+                              type="text"
+                              value={monitoringRecord.vitalSigns.oxygenFlow}
+                              onChange={(e) => setMonitoringRecord({
+                                ...monitoringRecord,
+                                vitalSigns: {
+                                  ...monitoringRecord.vitalSigns,
+                                  oxygenFlow: e.target.value
+                                }
+                              })}
+                              className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="L/min"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Monitoring Input Fields */}
+                      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
+                        <div>
+                          <label className="block text-gray-600 mb-1">体重:</label>
+                          <input
+                            type="text"
+                            value={monitoringRecord.weight}
+                            onChange={(e) => setMonitoringRecord({ ...monitoringRecord, weight: e.target.value })}
+                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="kg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">食事量(朝):</label>
+                          <input
+                            type="text"
+                            value={monitoringRecord.foodIntakeMorning}
+                            onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeMorning: e.target.value })}
+                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="割"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">食事量(昼):</label>
+                          <input
+                            type="text"
+                            value={monitoringRecord.foodIntakeLunch}
+                            onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeLunch: e.target.value })}
+                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="割"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">食事量(夕):</label>
+                          <input
+                            type="text"
+                            value={monitoringRecord.foodIntakeEvening}
+                            onChange={(e) => setMonitoringRecord({ ...monitoringRecord, foodIntakeEvening: e.target.value })}
+                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="割"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">尿量:</label>
+                          <input
+                            type="text"
+                            value={monitoringRecord.urineOutput}
+                            onChange={(e) => setMonitoringRecord({ ...monitoringRecord, urineOutput: e.target.value })}
+                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="ml"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">排便回数:</label>
+                          <input
+                            type="text"
+                            value={monitoringRecord.bowelMovementCount}
+                            onChange={(e) => setMonitoringRecord({ ...monitoringRecord, bowelMovementCount: e.target.value })}
+                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="回"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">排尿回数:</label>
+                          <input
+                            type="text"
+                            value={monitoringRecord.urinationCount}
+                            onChange={(e) => setMonitoringRecord({ ...monitoringRecord, urinationCount: e.target.value })}
+                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="回"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-600 mb-1">ドレーン廃液量:</label>
+                          <input
+                            type="text"
+                            value={monitoringRecord.drainOutput}
+                            onChange={(e) => setMonitoringRecord({ ...monitoringRecord, drainOutput: e.target.value })}
+                            className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="ml"
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <label className="block text-gray-600 mb-1 text-xs md:text-sm">その他:</label>
+                        <textarea
+                          value={monitoringRecord.other}
+                          onChange={(e) => setMonitoringRecord({ ...monitoringRecord, other: e.target.value })}
+                          className="w-full px-2 py-1 bg-white border border-gray-300 rounded text-gray-800 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[100px]"
+                          placeholder="その他の情報を入力してください"
+                        />
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMonitoringRecord({
+                              vitalSigns: {
+                                temperature: '',
+                                bloodPressure: '',
+                                heartRate: '',
+                                spO2: '',
+                                oxygenFlow: ''
+                              },
+                              weight: '',
+                              foodIntakeMorning: '',
+                              foodIntakeLunch: '',
+                              foodIntakeEvening: '',
+                              urineOutput: '',
+                              bowelMovementCount: '',
+                              urinationCount: '',
+                              drainOutput: '',
+                              other: ''
+                            });
+                            setPastMonitoringDateTime({
+                              date: '',
+                              time: ''
+                            });
+                          }}
                           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs md:text-sm font-medium transition-colors"
                         >
                           クリア
