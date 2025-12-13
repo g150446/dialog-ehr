@@ -7,6 +7,7 @@ An electronic health record (EHR) system built with Next.js, TypeScript, Tailwin
 - Patient list management with intuitive table layout
 - Comprehensive patient detail pages with full medical information
 - Seamless navigation between list and detail views
+- Voice input using MediaRecorder API and Whisper transcription
 - RESTful API backend integration with Next.js API routes
 - PostgreSQL database for reliable data storage
 - Responsive design optimized for desktop and mobile devices
@@ -16,6 +17,7 @@ An electronic health record (EHR) system built with Next.js, TypeScript, Tailwin
 
 - Node.js 18+ and npm/yarn/pnpm
 - Docker and Docker Compose (for PostgreSQL database)
+- Python 3.8+ (for Whisper transcription server, optional - only needed for voice input feature)
 
 ## Setup
 
@@ -77,6 +79,81 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+#### HTTPS Setup for Voice Input (Optional)
+
+If you need to access the application via a hostname other than `localhost` (e.g., via Tailscale VPN), you'll need to enable HTTPS for the MediaRecorder API to work. Browsers require HTTPS for MediaRecorder API when accessing via non-localhost hostnames.
+
+**Quick Setup:**
+
+1. **Install mkcert** (if not already installed):
+   ```bash
+   # macOS
+   brew install mkcert
+   
+   # Linux
+   sudo apt install libnss3-tools
+   wget -qO - https://dl.filippo.io/mkcert/install | sudo bash
+   
+   # Windows
+   choco install mkcert
+   ```
+
+2. **Install the local CA**:
+   ```bash
+   mkcert -install
+   ```
+
+3. **Generate SSL certificates** (replace `macbook-m1` with your actual hostname):
+   ```bash
+   mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ::1 macbook-m1
+   ```
+
+4. **Run the dev server with HTTPS**:
+   ```bash
+   npm run dev:https
+   ```
+
+5. **Access via HTTPS**:
+   - `https://localhost:3000` (works)
+   - `https://macbook-m1:3000` (works via Tailscale)
+
+**Note:** The certificate files (`localhost.pem` and `localhost-key.pem`) are already excluded from git via `.gitignore`.
+
+**Alternative:** If you don't want to set up HTTPS, you can use SSH port forwarding:
+```bash
+ssh -L 3000:localhost:3000 user@macbook-m1
+```
+Then access via `http://localhost:3000` from your remote machine.
+
+### 7. Start Whisper Transcription Server (Optional - for Voice Input)
+
+The voice input feature requires a Whisper transcription server running separately. This is a Python FastAPI server that handles audio transcription.
+
+**Setup:**
+
+1. **Install Python dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Start the Whisper server** (in a separate terminal):
+   ```bash
+   python whisper_server.py
+   ```
+
+   The server will automatically detect if SSL certificates (`localhost-key.pem` and `localhost.pem`) exist:
+   - **If certificates exist**: Server starts with HTTPS on `https://localhost:9000`
+   - **If certificates don't exist**: Server starts with HTTP on `http://localhost:9000`
+
+   The server automatically downloads the Whisper model on first run.
+
+**Important:** 
+- If you're running the Next.js app with HTTPS (`npm run dev:https`), the Whisper server **must also use HTTPS** to avoid mixed content errors.
+- To enable HTTPS for the Whisper server, ensure the same SSL certificates (`localhost-key.pem` and `localhost.pem`) used for Next.js are in the directory where you run `whisper_server.py`.
+- If you're running Next.js with HTTP (`npm run dev`), the Whisper server can use HTTP.
+
+**Note:** The Whisper server must be running for the voice input feature to work. The server uses the `small` model by default, which provides a good balance between accuracy and speed. You can modify the model size in `whisper_server.py` if needed.
 
 ## Database Management
 
@@ -167,7 +244,8 @@ The Next.js API routes provide the following endpoints:
 
 ### Available Scripts
 
-- `npm run dev` - Start the Next.js development server
+- `npm run dev` - Start the Next.js development server (HTTP)
+- `npm run dev:https` - Start the Next.js development server with HTTPS (requires SSL certificates)
 - `npm run build` - Build the application for production
 - `npm run start` - Start the production server
 - `npm run lint` - Run ESLint
