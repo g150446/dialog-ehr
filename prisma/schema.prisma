@@ -142,7 +142,8 @@ model MonitoringRecord {
   
   // Vital Signs (as separate columns for query performance)
   temperature           Float?
-  bloodPressure         String?
+  systolicBloodPressure Float?
+  diastolicBloodPressure Float?
   heartRate             Float?
   spO2                  Float?
   oxygenFlow            Float?

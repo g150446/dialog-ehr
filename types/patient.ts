@@ -116,7 +116,8 @@ export interface MonitoringRecord {
   id: string;
   date: string;
   temperature?: number;
-  bloodPressure?: string;
+  systolicBloodPressure?: number;
+  diastolicBloodPressure?: number;
   heartRate?: number;
   spO2?: number;
   oxygenFlow?: number;

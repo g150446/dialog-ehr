@@ -14,6 +14,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx scripts/migrate-data.ts",
+    "db:migrate-blood-pressure": "tsx scripts/migrate-blood-pressure.ts",
     "db:studio": "prisma studio",
     "json-server": "json-server --watch db.json --port 3001"
   },

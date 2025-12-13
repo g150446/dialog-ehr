@@ -25,12 +25,12 @@ function transformMonitoringRecord(mr: any): MonitoringRecord {
   };
 }
 
-export async function POST(
+export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string; recordId: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id, recordId } = await params;
     const body = await request.json();
     const recordData = body;
 
@@ -42,6 +42,21 @@ export async function POST(
     if (!patient) {
       return NextResponse.json(
         { error: 'Patient not found' },
+        { status: 404 }
+      );
+    }
+
+    // Verify monitoring record exists
+    const existingRecord = await prisma.monitoringRecord.findFirst({
+      where: {
+        patientId: id,
+        recordId: recordId,
+      },
+    });
+
+    if (!existingRecord) {
+      return NextResponse.json(
+        { error: 'Monitoring record not found' },
         { status: 404 }
       );
     }
@@ -65,15 +80,13 @@ export async function POST(
       return (value === null || value === undefined || value === '') ? undefined : value;
     };
 
-    // Create monitoring record
+    // Update monitoring record
     // Use current timestamp if date is provided as string, otherwise use the provided DateTime
     const recordDate = recordData.date 
       ? (typeof recordData.date === 'string' ? new Date(recordData.date) : recordData.date)
       : new Date();
     
-    const createData = {
-      patientId: id,
-      recordId: recordData.recordId,
+    const updateData = {
       date: recordDate,
       temperature: parseFloatOrUndefined(recordData.temperature),
       systolicBloodPressure: parseFloatOrUndefined(recordData.systolicBloodPressure),
@@ -92,15 +105,69 @@ export async function POST(
       other: stringOrUndefined(recordData.other),
     };
 
-    const monitoringRecord = await prisma.monitoringRecord.create({
-      data: createData,
+    const monitoringRecord = await prisma.monitoringRecord.update({
+      where: {
+        id: existingRecord.id,
+      },
+      data: updateData,
     });
 
-    return NextResponse.json(transformMonitoringRecord(monitoringRecord), { status: 201 });
+    return NextResponse.json(transformMonitoringRecord(monitoringRecord), { status: 200 });
   } catch (error) {
-    console.error('Error creating monitoring record:', error);
+    console.error('Error updating monitoring record:', error);
     return NextResponse.json(
-      { error: 'Failed to create monitoring record' },
+      { error: 'Failed to update monitoring record' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; recordId: string }> }
+) {
+  try {
+    const { id, recordId } = await params;
+
+    // Verify patient exists
+    const patient = await prisma.patient.findUnique({
+      where: { id },
+    });
+
+    if (!patient) {
+      return NextResponse.json(
+        { error: 'Patient not found' },
+        { status: 404 }
+      );
+    }
+
+    // Find monitoring record by recordId
+    const existingRecord = await prisma.monitoringRecord.findFirst({
+      where: {
+        patientId: id,
+        recordId: recordId,
+      },
+    });
+
+    if (!existingRecord) {
+      return NextResponse.json(
+        { error: 'Monitoring record not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete monitoring record
+    await prisma.monitoringRecord.delete({
+      where: {
+        id: existingRecord.id,
+      },
+    });
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting monitoring record:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete monitoring record' },
       { status: 500 }
     );
   }

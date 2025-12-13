@@ -82,15 +82,8 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
     const shortDate = `${date.getMonth() + 1}/${date.getDate()}`;
 
     // 血圧を収縮期/拡張期に分割
-    let systolic: number | undefined;
-    let diastolic: number | undefined;
-    if (record.bloodPressure) {
-      const parts = record.bloodPressure.split('/');
-      if (parts.length === 2) {
-        systolic = parseInt(parts[0]);
-        diastolic = parseInt(parts[1]);
-      }
-    }
+    const systolic = record.systolicBloodPressure;
+    const diastolic = record.diastolicBloodPressure;
 
     return {
       dateTime,
@@ -159,15 +152,8 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
     }
 
     // 血圧を収縮期/拡張期に分割
-    let systolic: number | undefined;
-    let diastolic: number | undefined;
-    if (record.bloodPressure) {
-      const parts = record.bloodPressure.split('/');
-      if (parts.length === 2) {
-        systolic = parseInt(parts[0]);
-        diastolic = parseInt(parts[1]);
-      }
-    }
+    const systolic = record.systolicBloodPressure;
+    const diastolic = record.diastolicBloodPressure;
 
     return {
       dateTime,
