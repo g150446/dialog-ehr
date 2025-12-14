@@ -274,6 +274,75 @@ The Next.js API routes provide the following endpoints:
 - Prisma ORM
 - Next.js API Routes
 
+## Infrastructure Components
+
+This application uses several infrastructure components for enhanced functionality and remote access:
+
+### Ollama
+
+[Ollama](https://ollama.ai/) is a local LLM (Large Language Model) runtime that allows you to run AI models locally on your machine. This project uses the **ehr-gemma** model, which is specifically trained for Electronic Health Record (EHR) data extraction and processing.
+
+**Purpose in this project:**
+- Extracts structured medical data (vital signs, measurements) from natural language input
+- Processes Japanese medical terminology and converts it to structured JSON format
+- Runs locally for privacy and data security (no data sent to external services)
+
+**Setup:**
+1. Install Ollama: `brew install ollama` (or download from [ollama.ai](https://ollama.ai))
+2. Pull the ehr-gemma model: `ollama pull ehr-gemma`
+3. Start Ollama server: `ollama serve` (runs on `http://localhost:11434` by default)
+
+**Access via HTTPS:**
+- The application accesses Ollama through an nginx reverse proxy for HTTPS support
+- Configure the Ollama server URL in the application settings (Settings page)
+- Default: `https://localhost:443` (local) or `https://macbook-m1:443` (via Tailscale)
+
+See `HTTPS_SETUP.md` for detailed setup instructions.
+
+### Tailscale
+
+[Tailscale](https://tailscale.com/) is a VPN service that creates a secure mesh network between your devices using WireGuard. It allows you to access services running on remote machines as if they were on your local network.
+
+**Purpose in this project:**
+- Enables remote access to the EHR application from other devices
+- Allows healthcare providers to access patient data securely from different locations
+- Provides secure, encrypted connections without complex firewall configuration
+
+**Setup:**
+1. Install Tailscale on your machine: `brew install tailscale` (or download from [tailscale.com](https://tailscale.com))
+2. Sign in to your Tailscale account
+3. Your machine will get a hostname (e.g., `macbook-m1`) that other Tailscale devices can access
+4. Access the application via `https://macbook-m1:3000` from any device on your Tailscale network
+
+**Benefits:**
+- No need to expose ports to the public internet
+- Automatic encryption and authentication
+- Works behind NAT/firewalls without configuration
+- Easy device management through Tailscale dashboard
+
+### nginx
+
+[nginx](https://nginx.org/) is a high-performance web server and reverse proxy. In this project, nginx is used as a reverse proxy to provide HTTPS access to the Ollama server.
+
+**Purpose in this project:**
+- Provides HTTPS termination for Ollama API requests
+- Enables secure access to Ollama from the Next.js application
+- Supports both localhost and Tailscale hostname access
+- Handles SSL/TLS certificate management
+
+**Setup:**
+1. Install nginx: `brew install nginx`
+2. Run the setup script: `./nginx/setup.sh`
+3. Start nginx: `brew services start nginx`
+4. nginx will proxy requests from `https://localhost:443` or `https://macbook-m1:443` to Ollama at `http://localhost:11434`
+
+**Configuration:**
+- Configuration file: `nginx/ollama.conf`
+- SSL certificates: Uses certificates from `~/caddy-certs/` (generated with mkcert)
+- Logs: `/opt/homebrew/var/log/nginx/ollama_*.log`
+
+See `nginx/README.md` and `HTTPS_SETUP.md` for detailed setup and troubleshooting.
+
 ## Documentation
 
 Specification documents for each page and feature are available in the `docs/specifications/` directory. These documents provide detailed information about:

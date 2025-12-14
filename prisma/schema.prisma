@@ -168,3 +168,13 @@ model MonitoringRecord {
   @@index([date])
   @@map("monitoring_records")
 }
+
+model AppSettings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("app_settings")
+}

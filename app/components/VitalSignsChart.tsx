@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -36,6 +36,21 @@ interface ChartDataPoint {
 }
 
 export default function VitalSignsChart({ records }: VitalSignsChartProps) {
+  // 画面の向きを検出
+  const [isPortrait, setIsPortrait] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(orientation: portrait)');
+    setIsPortrait(mediaQuery.matches);
+    
+    const handleOrientationChange = (e: MediaQueryListEvent) => {
+      setIsPortrait(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleOrientationChange);
+    return () => mediaQuery.removeEventListener('change', handleOrientationChange);
+  }, []);
+
   // データがない場合のメッセージ表示
   if (!records || records.length === 0) {
     return (
@@ -64,12 +79,16 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
   // 最新の記録日を取得
   const latestRecordDate = normalizeDateToMidnight(sortedRecords[sortedRecords.length - 1].date);
   
-  // 10日間の範囲を計算（最新日から9日前まで、合計10日間）
+  // 表示日数を決定（ポートレイト: 5日間、ランドスケープ: 10日間）
+  const daysToShow = isPortrait ? 5 : 10;
+  const daysBack = daysToShow - 1; // 5日間の場合は4日前、10日間の場合は9日前
+  
+  // 日数分の範囲を計算（最新日からdaysBack日前まで、合計daysToShow日間）
   const endDate = new Date(latestRecordDate);
   const startDate = new Date(latestRecordDate);
-  startDate.setDate(startDate.getDate() - 9); // 9日前を開始日とする
+  startDate.setDate(startDate.getDate() - daysBack);
 
-  // 10日間の範囲内の記録のみをフィルタリング
+  // 指定日数の範囲内の記録のみをフィルタリング
   const filteredRecords = sortedRecords.filter((record) => {
     const recordDate = normalizeDateToMidnight(record.date);
     return recordDate >= startDate && recordDate <= endDate;
@@ -116,15 +135,15 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
     }
   });
 
-  // 10日間すべての日付を生成
+  // 指定日数分すべての日付を生成
   const allDates: Date[] = [];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < daysToShow; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
     allDates.push(date);
   }
 
-  // テーブル用データを生成（10日間すべての日付を含む）
+  // テーブル用データを生成（指定日数分すべての日付を含む）
   const tableData: ChartDataPoint[] = allDates.map((date) => {
     const dateKey = date.toISOString().split('T')[0];
     const record = recordsByDate.get(dateKey);
@@ -173,7 +192,7 @@ export default function VitalSignsChart({ records }: VitalSignsChartProps) {
     };
   });
 
-  // 10日間すべての日付をX軸の目盛りとして設定
+  // 指定日数分すべての日付をX軸の目盛りとして設定
   const uniqueDateTicks = allDates.map((date) => date.getTime());
 
   // タイトル用の日付フォーマット関数

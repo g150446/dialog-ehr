@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { getSettings, DEFAULT_SETTINGS } from '@/lib/settings';
 
 type RecordingState = 'idle' | 'recording' | 'processing' | 'completed';
 
@@ -10,16 +11,33 @@ export default function FloatingButton() {
   const [transcription, setTranscription] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isSupported, setIsSupported] = useState<boolean>(false);
+  const [sttServerUrl, setSttServerUrl] = useState<string>(DEFAULT_SETTINGS.sttServerUrl);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const mimeTypeRef = useRef<string>('audio/webm');
 
+  // 設定を読み込む
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await getSettings();
+        setSttServerUrl(settings.sttServerUrl || DEFAULT_SETTINGS.sttServerUrl);
+      } catch (error) {
+        console.error('Error loading STT server URL from settings:', error);
+        // エラー時はデフォルト値を使用
+        setSttServerUrl(DEFAULT_SETTINGS.sttServerUrl);
+      }
+    };
+    loadSettings();
+  }, []);
+
   // ブラウザのサポートを確認
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const hasMediaDevices = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
-      const hasMediaRecorder = typeof MediaRecorder !== 'undefined';
+      const hasMediaDevices = !!(navigator.mediaDevices && 'getUserMedia' in navigator.mediaDevices);
+      // MediaRecorderの存在を確認（古いブラウザでは存在しない可能性がある）
+      const hasMediaRecorder = 'MediaRecorder' in window;
       const isSecureContext = window.isSecureContext || 
         window.location.protocol === 'https:' || 
         window.location.hostname === 'localhost' || 
@@ -72,7 +90,7 @@ export default function FloatingButton() {
       streamRef.current = stream;
 
       // MediaRecorderのサポートを確認
-      if (typeof MediaRecorder === 'undefined') {
+      if (!('MediaRecorder' in window)) {
         throw new Error('MediaRecorder APIがサポートされていません。');
       }
 
@@ -144,9 +162,8 @@ export default function FloatingButton() {
       const formData = new FormData();
       formData.append('audio_file', audioBlob, 'recording.webm');
 
-      // Whisper serverに送信
-      // HTTPSでアクセス（Tailscale経由でAndroidデバイスからアクセスするためmacbook-m1を使用）
-      const whisperServerUrl = 'https://macbook-m1:9000/transcribe';
+      // Whisper serverに送信（設定から読み込んだURLを使用）
+      const whisperServerUrl = `${sttServerUrl}/transcribe`;
       
       const response = await fetch(whisperServerUrl, {
         method: 'POST',
@@ -190,16 +207,17 @@ export default function FloatingButton() {
     setIsDialogOpen(false);
   };
 
-  const handleOpenDialog = () => {
-    setError(''); // ダイアログを開くときにエラーをクリア
-    setIsDialogOpen(true);
+  const handleButtonClick = async () => {
+    setError(''); // エラーをクリア
+    setIsDialogOpen(true); // ダイアログを開く（録音状態を表示するため）
+    await startRecording(); // すぐに録音を開始
   };
 
   return (
     <>
       {/* Floating Round Button */}
       <button
-        onClick={handleOpenDialog}
+        onClick={handleButtonClick}
         className="fixed bottom-[100px] left-5 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors z-40 flex items-center justify-center"
         aria-label="音声録音を開始"
       >
@@ -218,8 +236,8 @@ export default function FloatingButton() {
         </svg>
       </button>
 
-      {/* Dialog Modal */}
-      {isDialogOpen && (
+      {/* Dialog Modal - 録音中、処理中、完了時、またはエラー時にのみ表示 */}
+      {isDialogOpen && (recordingState !== 'idle' || error) && (
         <>
           {/* Backdrop */}
           <div
@@ -256,30 +274,6 @@ export default function FloatingButton() {
                       </ul>
                     </div>
                   )}
-                </div>
-              )}
-
-              {/* 録音状態に応じた表示 */}
-              {recordingState === 'idle' && (
-                <div className="mb-6">
-                  <p className="text-gray-600 mb-4">
-                    マイクボタンを押して録音を開始してください
-                  </p>
-                  <button
-                    onClick={startRecording}
-                    disabled={!isSupported}
-                    className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-full transition-colors flex items-center justify-center gap-2 mx-auto"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                    </svg>
-                    録音開始
-                  </button>
                 </div>
               )}
 
@@ -365,5 +359,3 @@ export default function FloatingButton() {
     </>
   );
 }
-
-
