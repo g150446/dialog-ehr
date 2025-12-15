@@ -12,6 +12,9 @@ export default function FloatingButton() {
   const [error, setError] = useState<string>('');
   const [isSupported, setIsSupported] = useState<boolean>(false);
   const [sttServerUrl, setSttServerUrl] = useState<string>(DEFAULT_SETTINGS.sttServerUrl);
+  const [llmServerUrl, setLlmServerUrl] = useState<string>(DEFAULT_SETTINGS.llmServerUrl);
+  const [isOllamaLoading, setIsOllamaLoading] = useState<boolean>(false);
+  const [ollamaResponse, setOllamaResponse] = useState<string>('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -23,10 +26,12 @@ export default function FloatingButton() {
       try {
         const settings = await getSettings();
         setSttServerUrl(settings.sttServerUrl || DEFAULT_SETTINGS.sttServerUrl);
+        setLlmServerUrl(settings.llmServerUrl || DEFAULT_SETTINGS.llmServerUrl);
       } catch (error) {
-        console.error('Error loading STT server URL from settings:', error);
+        console.error('Error loading server URLs from settings:', error);
         // エラー時はデフォルト値を使用
         setSttServerUrl(DEFAULT_SETTINGS.sttServerUrl);
+        setLlmServerUrl(DEFAULT_SETTINGS.llmServerUrl);
       }
     };
     loadSettings();
@@ -188,6 +193,80 @@ export default function FloatingButton() {
     }
   };
 
+  const sendToOllama = async () => {
+    if (!transcription || transcription.trim() === '') {
+      setError('送信するテキストがありません。');
+      return;
+    }
+
+    try {
+      setIsOllamaLoading(true);
+      setError('');
+      setOllamaResponse('');
+
+      // 最新の設定を読み込む（設定ページで更新された場合に対応）
+      const settings = await getSettings();
+      const currentLlmServerUrl = settings.llmServerUrl || DEFAULT_SETTINGS.llmServerUrl;
+      
+      // 状態も更新する
+      setLlmServerUrl(currentLlmServerUrl);
+
+      // デバッグ用: 設定が読み込まれているか確認
+      if (!currentLlmServerUrl || currentLlmServerUrl.trim() === '') {
+        setError('Ollamaサーバーのアドレスが設定されていません。設定ページでollamaサーバーのアドレスを設定してください。');
+        setIsOllamaLoading(false);
+        return;
+      }
+
+      // Next.js APIルート経由でollamaにリクエストを送信（CORSとSSL証明書の問題を回避）
+      const response = await fetch('/api/ollama/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: transcription,
+        }),
+      }).catch((fetchError) => {
+        // ネットワークエラーや接続エラーの場合
+        console.error('Fetch error:', fetchError);
+        throw new Error(`ネットワークエラー: ${fetchError.message || 'サーバーに接続できませんでした'}`);
+      });
+
+      if (!response.ok) {
+        let errorMessage = `サーバーエラー: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          // JSONパースに失敗した場合は、レスポンステキストを取得
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          } catch (textError) {
+            // テキスト取得にも失敗した場合は、デフォルトメッセージを使用
+            console.error('Failed to parse error response:', textError);
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      setOllamaResponse(data.response || '');
+    } catch (err) {
+      console.error('Error sending to Ollama:', err);
+      setError(
+        err instanceof Error 
+          ? `エラー: ${err.message}` 
+          : 'Ollamaへの送信に失敗しました。サーバーが起動しているか、設定を確認してください。'
+      );
+    } finally {
+      setIsOllamaLoading(false);
+    }
+  };
+
   const handleClose = () => {
     // 録音中の場合は停止
     if (recordingState === 'recording' && mediaRecorderRef.current) {
@@ -204,6 +283,8 @@ export default function FloatingButton() {
     setRecordingState('idle');
     setTranscription('');
     setError('');
+    setOllamaResponse('');
+    setIsOllamaLoading(false);
     setIsDialogOpen(false);
   };
 
@@ -324,6 +405,30 @@ export default function FloatingButton() {
                 </div>
               )}
 
+              {/* Ollama Loading State */}
+              {isOllamaLoading && (
+                <div className="mb-6">
+                  <div className="flex flex-col items-center justify-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p className="text-gray-600">
+                      Ollamaに送信中...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Ollama Response */}
+              {ollamaResponse && !isOllamaLoading && (
+                <div className="mb-6">
+                  <p className="text-sm text-gray-600 mb-2">Ollama応答:</p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                    <p className="text-gray-800 whitespace-pre-wrap break-words">
+                      {ollamaResponse}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* エラーメッセージ */}
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -333,16 +438,12 @@ export default function FloatingButton() {
 
               {/* 閉じるボタン */}
               <div className="flex gap-3 justify-center">
-                {recordingState === 'completed' && (
+                {recordingState === 'completed' && !isOllamaLoading && (
                   <button
-                    onClick={() => {
-                      setRecordingState('idle');
-                      setTranscription('');
-                      setError('');
-                    }}
-                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
+                    onClick={sendToOllama}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
                   >
-                    もう一度録音
+                    Send to ollama
                   </button>
                 )}
                 <button
