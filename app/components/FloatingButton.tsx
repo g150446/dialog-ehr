@@ -529,6 +529,43 @@ export default function FloatingButton() {
     setIsDialogOpen(false);
   };
 
+  // Ollama から取得したバイタル JSON から確認用の日本語メッセージを生成
+  const buildVitalsConfirmationText = (vitals: any | null): string => {
+    if (!vitals || typeof vitals !== 'object') return '';
+
+    const parts: string[] = [];
+
+    if (vitals.temperature != null) {
+      parts.push(`体温 ${Number(vitals.temperature)}℃`);
+    }
+
+    if (vitals.systolicBloodPressure != null) {
+      parts.push(`収縮期血圧 ${Number(vitals.systolicBloodPressure)}mmHg`);
+    }
+
+    if (vitals.diastolicBloodPressure != null) {
+      parts.push(`拡張期血圧 ${Number(vitals.diastolicBloodPressure)}mmHg`);
+    }
+
+    const spO2Value = vitals.spO2 ?? vitals.sPO2;
+    if (spO2Value != null) {
+      parts.push(`SpO2 ${Number(spO2Value)}%`);
+    }
+
+    const heartRateValue = vitals.heartRate ?? vitals.pulse;
+    if (heartRateValue != null) {
+      parts.push(`心拍数 ${Number(heartRateValue)}回/分`);
+    }
+
+    if (vitals.weight != null) {
+      parts.push(`体重 ${Number(vitals.weight)}kg`);
+    }
+
+    if (parts.length === 0) return '';
+
+    return `${parts.join('、')}でよろしいですか？`;
+  };
+
   const handleButtonClick = async () => {
     setError(''); // エラーをクリア
     setIsDialogOpen(true); // ダイアログを開く（録音状態を表示するため）
@@ -666,6 +703,22 @@ export default function FloatingButton() {
                     {ollamaResponse}
                   </pre>
                 </div>
+              )}
+
+              {/* Ollama がバイタル JSON を認識した場合の確認メッセージ */}
+              {ollamaJsonRecognized === true && ollamaVitals && !isOllamaLoading && (
+                (() => {
+                  const text = buildVitalsConfirmationText(ollamaVitals);
+                  if (!text) return null;
+                  return (
+                    <div className="mb-6">
+                      <p className="text-sm text-gray-600 mb-2">抽出されたバイタルサインの確認:</p>
+                      <p className="text-base text-gray-800 whitespace-pre-wrap break-words">
+                        {text}
+                      </p>
+                    </div>
+                  );
+                })()
               )}
 
               {/* 保存成功メッセージ */}
