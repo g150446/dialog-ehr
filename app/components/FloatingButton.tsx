@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { getSettings, DEFAULT_SETTINGS } from '@/lib/settings';
+import { saveMonitoringRecord } from '@/lib/api';
+import type { MonitoringRecord } from '@/types/patient';
 
 type RecordingState = 'idle' | 'recording' | 'processing' | 'completed';
 
@@ -10,15 +13,21 @@ export default function FloatingButton() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [transcription, setTranscription] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [saveMessage, setSaveMessage] = useState<string>('');
   const [isSupported, setIsSupported] = useState<boolean>(false);
   const [sttServerUrl, setSttServerUrl] = useState<string>(DEFAULT_SETTINGS.sttServerUrl);
   const [llmServerUrl, setLlmServerUrl] = useState<string>(DEFAULT_SETTINGS.llmServerUrl);
   const [isOllamaLoading, setIsOllamaLoading] = useState<boolean>(false);
   const [ollamaResponse, setOllamaResponse] = useState<string>('');
+  const [ollamaVitals, setOllamaVitals] = useState<any | null>(null);
+  const [isSavingMonitoringRecord, setIsSavingMonitoringRecord] = useState<boolean>(false);
+  const [ollamaJsonRecognized, setOllamaJsonRecognized] = useState<boolean | null>(null);
+  const [patientId, setPatientId] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const mimeTypeRef = useRef<string>('audio/webm');
+  const pathname = usePathname();
 
   // 設定を読み込む
   useEffect(() => {
@@ -36,6 +45,20 @@ export default function FloatingButton() {
     };
     loadSettings();
   }, []);
+
+  // 現在のURLから患者IDを取得（/patients/[id] のみ対応）
+  useEffect(() => {
+    if (!pathname) {
+      setPatientId(null);
+      return;
+    }
+    const match = pathname.match(/^\/patients\/([^/]+)/);
+    if (match && match[1]) {
+      setPatientId(match[1]);
+    } else {
+      setPatientId(null);
+    }
+  }, [pathname]);
 
   // ブラウザのサポートを確認
   useEffect(() => {
@@ -69,7 +92,11 @@ export default function FloatingButton() {
   const startRecording = async () => {
     try {
       setError('');
+      setSaveMessage('');
       setTranscription('');
+      setOllamaResponse('');
+      setOllamaVitals(null);
+      setOllamaJsonRecognized(null);
       
       // ブラウザのサポートを確認
       if (typeof window === 'undefined') {
@@ -202,7 +229,10 @@ export default function FloatingButton() {
     try {
       setIsOllamaLoading(true);
       setError('');
+      setSaveMessage('');
       setOllamaResponse('');
+      setOllamaVitals(null);
+      setOllamaJsonRecognized(null);
 
       // 最新の設定を読み込む（設定ページで更新された場合に対応）
       const settings = await getSettings();
@@ -254,7 +284,132 @@ export default function FloatingButton() {
       }
 
       const data = await response.json();
-      setOllamaResponse(data.response || '');
+
+      // Ollamaからのレスポンスの形式に応じて処理を分岐
+      // 1) バイタルサインJSONとみなせる場合は、記録登録用に保持
+      let candidate: any = null;
+
+      // バイタルキーをチェックする関数
+      const hasVitalKeys = (obj: any): boolean => {
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+          return false;
+        }
+        return (
+          'temperature' in obj ||
+          'spO2' in obj ||
+          'sPO2' in obj ||
+          'heartRate' in obj ||
+          'pulse' in obj ||
+          'systolicBloodPressure' in obj ||
+          'diastolicBloodPressure' in obj
+        );
+      };
+
+      // まず data 自体が文字列の場合（``` や ''' で囲まれたJSON文字列を想定）を処理
+      if (typeof data === 'string') {
+        let str = data.trim();
+
+        // ``` または ```json で囲まれている場合
+        if (str.startsWith('```')) {
+          // 先頭の ``` または ```json を削除
+          const firstLineEnd = str.indexOf('\n');
+          if (firstLineEnd !== -1) {
+            const firstLine = str.substring(0, firstLineEnd);
+            if (firstLine.startsWith('```')) {
+              str = str.substring(firstLineEnd + 1).trim();
+            }
+          }
+          // 末尾の ``` を削除
+          if (str.endsWith('```')) {
+            str = str.slice(0, -3).trim();
+          }
+        }
+
+        // ''' で囲まれている場合
+        if (str.startsWith("'''") && str.endsWith("'''")) {
+          str = str.slice(3, -3).trim();
+        }
+
+        if (str.startsWith('{') && str.endsWith('}')) {
+          try {
+            const parsed = JSON.parse(str);
+            if (hasVitalKeys(parsed)) {
+              candidate = parsed;
+            }
+          } catch (parseError) {
+            console.debug('Failed to parse data as JSON string:', parseError);
+          }
+        }
+      }
+      // data 自体がバイタルJSONオブジェクトかチェック
+      else if (hasVitalKeys(data)) {
+        candidate = data;
+      }
+      // data.response がオブジェクトの場合
+      else if (data && typeof data === 'object' && data.response && typeof data.response === 'object' && !Array.isArray(data.response)) {
+        if (hasVitalKeys(data.response)) {
+          candidate = data.response;
+        }
+      }
+      // data.response がJSON文字列の場合はパースしてみる
+      else if (data && typeof data.response === 'string') {
+        let trimmed = data.response.trim();
+
+        // ``` または ```json で囲まれている場合
+        if (trimmed.startsWith('```')) {
+          const firstLineEnd = trimmed.indexOf('\n');
+          if (firstLineEnd !== -1) {
+            const firstLine = trimmed.substring(0, firstLineEnd);
+            if (firstLine.startsWith('```')) {
+              trimmed = trimmed.substring(firstLineEnd + 1).trim();
+            }
+          }
+          if (trimmed.endsWith('```')) {
+            trimmed = trimmed.slice(0, -3).trim();
+          }
+        }
+
+        // 先頭と末尾が ''' で囲まれている場合は取り除く
+        if (trimmed.startsWith("'''") && trimmed.endsWith("'''")) {
+          trimmed = trimmed.slice(3, -3).trim();
+        }
+
+        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            if (hasVitalKeys(parsed)) {
+              candidate = parsed;
+            }
+          } catch (parseError) {
+            // パース失敗時は無視
+            console.debug('Failed to parse data.response as JSON:', parseError);
+          }
+        }
+      }
+
+      if (candidate) {
+        // バイタルJSONとして認識できた
+        setOllamaVitals(candidate);
+        setOllamaJsonRecognized(true);
+        // 表示用にはJSONを整形して見せる
+        try {
+          setOllamaResponse(JSON.stringify(candidate, null, 2));
+        } catch {
+          setOllamaResponse(String(candidate));
+        }
+      } else {
+        // バイタルJSONとして認識できなかった場合は通常テキストとして表示
+        const responseText =
+          typeof data?.response === 'string'
+            ? data.response
+            : typeof data === 'string'
+            ? data
+            : JSON.stringify(data, null, 2);
+
+        setOllamaResponse(responseText);
+        setOllamaVitals(null);
+        setOllamaJsonRecognized(false);
+      }
     } catch (err) {
       console.error('Error sending to Ollama:', err);
       setError(
@@ -262,8 +417,83 @@ export default function FloatingButton() {
           ? `エラー: ${err.message}` 
           : 'Ollamaへの送信に失敗しました。サーバーが起動しているか、設定を確認してください。'
       );
+      setOllamaVitals(null);
     } finally {
       setIsOllamaLoading(false);
+    }
+  };
+
+  // Ollamaから取得したバイタルJSONをモニタリング記録として登録
+  const handleRegisterMonitoringRecord = async () => {
+    if (!ollamaVitals) {
+      setError('バイタルサインJSONとして認識できるデータがありません。');
+      return;
+    }
+
+    if (!patientId) {
+      setError('患者詳細ページ以外では記録登録は行えません。患者詳細ページからご利用ください。');
+      return;
+    }
+
+    try {
+      setIsSavingMonitoringRecord(true);
+      setError('');
+      setSaveMessage('');
+
+      // OllamaからのキーをMonitoringRecord API用のフィールドにマッピング
+      const vitals = ollamaVitals as any;
+
+      const payload: Partial<MonitoringRecord> & { recordId: string } = {
+        recordId: typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `AUTO_${Date.now()}`,
+      };
+
+      if (vitals.temperature !== undefined) {
+        payload.temperature = Number(vitals.temperature);
+      }
+
+      // spO2 / sPO2 両方に対応
+      const spO2Value = vitals.spO2 ?? vitals.sPO2;
+      if (spO2Value !== undefined) {
+        payload.spO2 = Number(spO2Value);
+      }
+
+      const heartRateValue = vitals.heartRate ?? vitals.pulse;
+      if (heartRateValue !== undefined) {
+        payload.heartRate = Number(heartRateValue);
+      }
+
+      if (vitals.systolicBloodPressure !== undefined) {
+        payload.systolicBloodPressure = Number(vitals.systolicBloodPressure);
+      }
+
+      if (vitals.diastolicBloodPressure !== undefined) {
+        payload.diastolicBloodPressure = Number(vitals.diastolicBloodPressure);
+      }
+
+      if (vitals.weight !== undefined) {
+        payload.weight = Number(vitals.weight);
+      }
+
+      // ここではdateを送らず、API側で現在時刻を使用させる
+
+      const saved = await saveMonitoringRecord(patientId, payload);
+
+      if (saved && saved.id) {
+        setSaveMessage('モニタリング記録を登録しました。');
+      } else {
+        setSaveMessage('モニタリング記録を登録しました（ID未取得）。');
+      }
+    } catch (err) {
+      console.error('Error saving monitoring record from Ollama vitals:', err);
+      setError(
+        err instanceof Error
+          ? `記録登録エラー: ${err.message}`
+          : 'モニタリング記録の登録に失敗しました。'
+      );
+    } finally {
+      setIsSavingMonitoringRecord(false);
     }
   };
 
@@ -284,6 +514,9 @@ export default function FloatingButton() {
     setTranscription('');
     setError('');
     setOllamaResponse('');
+    setOllamaVitals(null);
+    setSaveMessage('');
+    setOllamaJsonRecognized(null);
     setIsOllamaLoading(false);
     setIsDialogOpen(false);
   };
@@ -421,11 +654,16 @@ export default function FloatingButton() {
               {ollamaResponse && !isOllamaLoading && (
                 <div className="mb-6">
                   <p className="text-sm text-gray-600 mb-2">Ollama応答:</p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                    <p className="text-gray-800 whitespace-pre-wrap break-words">
-                      {ollamaResponse}
-                    </p>
-                  </div>
+                  <pre className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left text-gray-800 whitespace-pre-wrap break-words text-sm">
+                    {ollamaResponse}
+                  </pre>
+                </div>
+              )}
+
+              {/* 保存成功メッセージ */}
+              {saveMessage && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-700">{saveMessage}</p>
                 </div>
               )}
 
@@ -436,15 +674,33 @@ export default function FloatingButton() {
                 </div>
               )}
 
-              {/* 閉じるボタン */}
+              {/* アクションボタン */}
               <div className="flex gap-3 justify-center">
                 {recordingState === 'completed' && !isOllamaLoading && (
-                  <button
-                    onClick={sendToOllama}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
-                  >
-                    Send to ollama
-                  </button>
+                  <>
+                    {/* まだOllama解析をしていない or 再送したい場合 */}
+                    {ollamaJsonRecognized === null && (
+                      <button
+                        onClick={sendToOllama}
+                        disabled={isSavingMonitoringRecord}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        Send to ollama
+                      </button>
+                    )}
+
+                    {/* バイタルJSONとして認識できた場合のみ「記録登録」を表示 */}
+                    {ollamaJsonRecognized === true && ollamaVitals && (
+                      <button
+                        onClick={handleRegisterMonitoringRecord}
+                        disabled={isSavingMonitoringRecord || !patientId}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        {isSavingMonitoringRecord ? '登録中...' : '記録登録'}
+                      </button>
+                    )}
+                    {/* ollamaJsonRecognized === false の場合は「閉じる」のみ表示（追加ボタンなし） */}
+                  </>
                 )}
                 <button
                   onClick={handleClose}

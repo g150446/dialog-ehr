@@ -1,4 +1,4 @@
-import { Patient, MedicalRecord } from '@/types/patient';
+import { Patient, MedicalRecord, MonitoringRecord } from '@/types/patient';
 
 // Use relative paths for Next.js API routes
 const API_BASE_URL = '/api';
@@ -61,6 +61,26 @@ export async function searchPatients(query: string): Promise<Patient[]> {
     return await response.json();
   } catch (error) {
     console.error('Error searching patients:', error);
+    throw error;
+  }
+}
+
+export async function saveMonitoringRecord(
+  patientId: string,
+  record: Partial<MonitoringRecord> & { recordId: string }
+): Promise<MonitoringRecord> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/monitoring-records`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to save monitoring record');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error saving monitoring record:', error);
     throw error;
   }
 }
