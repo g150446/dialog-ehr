@@ -2082,7 +2082,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                 {/* Monitoring Data */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
                                   {/* Vital Signs */}
-                                  {record.temperature && (
+                                  {record.temperature !== undefined && record.temperature !== null && (
                                     <div>
                                       <span className="text-gray-600">体温:</span>
                                       <span className="ml-1 font-medium text-gray-800">{record.temperature}°C</span>
@@ -2094,26 +2094,26 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                       <span className="ml-1 font-medium text-gray-800">{record.systolicBloodPressure}/{record.diastolicBloodPressure} mmHg</span>
                                     </div>
                                   )}
-                                  {record.heartRate && (
+                                  {record.heartRate !== undefined && record.heartRate !== null && (
                                     <div>
                                       <span className="text-gray-600">心拍数:</span>
                                       <span className="ml-1 font-medium text-gray-800">{record.heartRate}bpm</span>
                                     </div>
                                   )}
-                                  {record.spO2 && (
+                                  {record.spO2 !== undefined && record.spO2 !== null && (
                                     <div>
                                       <span className="text-gray-600">SpO2:</span>
                                       <span className="ml-1 font-medium text-gray-800">{record.spO2}%</span>
                                     </div>
                                   )}
-                                  {record.oxygenFlow && (
+                                  {record.oxygenFlow !== undefined && record.oxygenFlow !== null && (
                                     <div>
                                       <span className="text-gray-600">酸素流量:</span>
                                       <span className="ml-1 font-medium text-gray-800">{record.oxygenFlow}L/min</span>
                                     </div>
                                   )}
                                   {/* Other Monitoring Data */}
-                                  {record.weight && (
+                                  {record.weight !== undefined && record.weight !== null && (
                                     <div>
                                       <span className="text-gray-600">体重:</span>
                                       <span className="ml-1 font-medium text-gray-800">{record.weight}kg</span>
@@ -2137,25 +2137,25 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                       <span className="ml-1 font-medium text-gray-800">{record.foodIntakeEvening}</span>
                                     </div>
                                   )}
-                                  {record.urineOutput && (
+                                  {record.urineOutput !== undefined && record.urineOutput !== null && (
                                     <div>
                                       <span className="text-gray-600">尿量:</span>
                                       <span className="ml-1 font-medium text-gray-800">{record.urineOutput}ml</span>
                                     </div>
                                   )}
-                                  {record.bowelMovementCount && (
+                                  {record.bowelMovementCount !== undefined && record.bowelMovementCount !== null && (
                                     <div>
                                       <span className="text-gray-600">排便回数:</span>
                                       <span className="ml-1 font-medium text-gray-800">{record.bowelMovementCount}回</span>
                                     </div>
                                   )}
-                                  {record.urinationCount && (
+                                  {record.urinationCount !== undefined && record.urinationCount !== null && (
                                     <div>
                                       <span className="text-gray-600">排尿回数:</span>
                                       <span className="ml-1 font-medium text-gray-800">{record.urinationCount}回</span>
                                     </div>
                                   )}
-                                  {record.drainOutput && (
+                                  {record.drainOutput !== undefined && record.drainOutput !== null && (
                                     <div>
                                       <span className="text-gray-600">ドレーン廃液量:</span>
                                       <span className="ml-1 font-medium text-gray-800">{record.drainOutput}ml</span>
@@ -2276,7 +2276,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                     {/* Monitoring Data */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
                                       {/* Vital Signs */}
-                                      {record.temperature && (
+                                      {record.temperature !== undefined && record.temperature !== null && (
                                         <div>
                                           <span className="text-gray-600">体温:</span>
                                           <span className="ml-1 font-medium text-gray-800">{record.temperature}°C</span>
@@ -2288,26 +2288,26 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                           <span className="ml-1 font-medium text-gray-800">{record.systolicBloodPressure}/{record.diastolicBloodPressure} mmHg</span>
                                         </div>
                                       )}
-                                      {record.heartRate && (
+                                      {record.heartRate !== undefined && record.heartRate !== null && (
                                         <div>
                                           <span className="text-gray-600">心拍数:</span>
                                           <span className="ml-1 font-medium text-gray-800">{record.heartRate}bpm</span>
                                         </div>
                                       )}
-                                      {record.spO2 && (
+                                      {record.spO2 !== undefined && record.spO2 !== null && (
                                         <div>
                                           <span className="text-gray-600">SpO2:</span>
                                           <span className="ml-1 font-medium text-gray-800">{record.spO2}%</span>
                                         </div>
                                       )}
-                                      {record.oxygenFlow && (
+                                      {record.oxygenFlow !== undefined && record.oxygenFlow !== null && (
                                         <div>
                                           <span className="text-gray-600">酸素流量:</span>
                                           <span className="ml-1 font-medium text-gray-800">{record.oxygenFlow}L/min</span>
                                         </div>
                                       )}
                                       {/* Other Monitoring Data */}
-                                      {record.weight && (
+                                      {record.weight !== undefined && record.weight !== null && (
                                         <div>
                                           <span className="text-gray-600">体重:</span>
                                           <span className="ml-1 font-medium text-gray-800">{record.weight}kg</span>
@@ -2331,25 +2331,25 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                           <span className="ml-1 font-medium text-gray-800">{record.foodIntakeEvening}</span>
                                         </div>
                                       )}
-                                      {record.urineOutput && (
+                                      {record.urineOutput !== undefined && record.urineOutput !== null && (
                                         <div>
                                           <span className="text-gray-600">尿量:</span>
                                           <span className="ml-1 font-medium text-gray-800">{record.urineOutput}ml</span>
                                         </div>
                                       )}
-                                      {record.bowelMovementCount && (
+                                      {record.bowelMovementCount !== undefined && record.bowelMovementCount !== null && (
                                         <div>
                                           <span className="text-gray-600">排便回数:</span>
                                           <span className="ml-1 font-medium text-gray-800">{record.bowelMovementCount}回</span>
                                         </div>
                                       )}
-                                      {record.urinationCount && (
+                                      {record.urinationCount !== undefined && record.urinationCount !== null && (
                                         <div>
                                           <span className="text-gray-600">排尿回数:</span>
                                           <span className="ml-1 font-medium text-gray-800">{record.urinationCount}回</span>
                                         </div>
                                       )}
-                                      {record.drainOutput && (
+                                      {record.drainOutput !== undefined && record.drainOutput !== null && (
                                         <div>
                                           <span className="text-gray-600">ドレーン廃液量:</span>
                                           <span className="ml-1 font-medium text-gray-800">{record.drainOutput}ml</span>

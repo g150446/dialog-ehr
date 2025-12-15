@@ -22,6 +22,7 @@ export default function FloatingButton() {
   const [ollamaVitals, setOllamaVitals] = useState<any | null>(null);
   const [isSavingMonitoringRecord, setIsSavingMonitoringRecord] = useState<boolean>(false);
   const [ollamaJsonRecognized, setOllamaJsonRecognized] = useState<boolean | null>(null);
+  const [hasSavedMonitoringRecord, setHasSavedMonitoringRecord] = useState<boolean>(false);
   const [patientId, setPatientId] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -97,6 +98,7 @@ export default function FloatingButton() {
       setOllamaResponse('');
       setOllamaVitals(null);
       setOllamaJsonRecognized(null);
+       setHasSavedMonitoringRecord(false);
       
       // ブラウザのサポートを確認
       if (typeof window === 'undefined') {
@@ -233,6 +235,7 @@ export default function FloatingButton() {
       setOllamaResponse('');
       setOllamaVitals(null);
       setOllamaJsonRecognized(null);
+      setHasSavedMonitoringRecord(false);
 
       // 最新の設定を読み込む（設定ページで更新された場合に対応）
       const settings = await getSettings();
@@ -480,11 +483,8 @@ export default function FloatingButton() {
 
       const saved = await saveMonitoringRecord(patientId, payload);
 
-      if (saved && saved.id) {
-        setSaveMessage('モニタリング記録を登録しました。');
-      } else {
-        setSaveMessage('モニタリング記録を登録しました（ID未取得）。');
-      }
+      setHasSavedMonitoringRecord(true);
+      setSaveMessage('モニタリング記録を登録しました。');
     } catch (err) {
       console.error('Error saving monitoring record from Ollama vitals:', err);
       setError(
@@ -498,6 +498,13 @@ export default function FloatingButton() {
   };
 
   const handleClose = () => {
+    // 記録登録に成功している場合は、患者詳細ページの過去モニタリング記録を表示しつつ最新データを読み込む
+    if (hasSavedMonitoringRecord && patientId && typeof window !== 'undefined') {
+      sessionStorage.setItem('showPastMonitoring', 'true');
+      window.location.href = `/patients/${patientId}`;
+      return;
+    }
+
     // 録音中の場合は停止
     if (recordingState === 'recording' && mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
@@ -517,6 +524,7 @@ export default function FloatingButton() {
     setOllamaVitals(null);
     setSaveMessage('');
     setOllamaJsonRecognized(null);
+    setHasSavedMonitoringRecord(false);
     setIsOllamaLoading(false);
     setIsDialogOpen(false);
   };
