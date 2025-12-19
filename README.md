@@ -80,6 +80,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+**To stop the development server:**
+- If running in foreground: Press `Ctrl+C` in the terminal
+- If running in background: Find and kill the process:
+  ```bash
+  # Find and kill process on port 3000
+  lsof -ti:3000 | xargs kill -9
+
+  # Or find the process ID first
+  lsof -ti:3000
+  # Then kill it
+  kill -9 <PID>
+  ```
+
 #### HTTPS Setup for Voice Input (Optional)
 
 If you need to access the application via a hostname other than `localhost` (e.g., via Tailscale VPN), you'll need to enable HTTPS for the MediaRecorder API to work. Browsers require HTTPS for MediaRecorder API when accessing via non-localhost hostnames.
@@ -154,6 +167,80 @@ The voice input feature requires a Whisper transcription server running separate
 - If you're running Next.js with HTTP (`npm run dev`), the Whisper server can use HTTP.
 
 **Note:** The Whisper server must be running for the voice input feature to work. The server uses the `small` model by default, which provides a good balance between accuracy and speed. You can modify the model size in `whisper_server.py` if needed.
+
+## Security Best Practices
+
+### Critical Security Configuration
+
+**IMPORTANT:** This repository includes default configuration that is **NOT secure for production use**. Before deploying to production, you MUST implement the following security measures:
+
+#### 1. Restrict Database Port Access
+
+The `docker-compose.yml` has been configured to bind PostgreSQL to localhost only:
+
+```yaml
+ports:
+  - "127.0.0.1:5432:5432"  # Only accessible from localhost
+```
+
+**What this prevents:** Direct access to your PostgreSQL database from the internet. Without this restriction, attackers can scan for open PostgreSQL ports and attempt to gain access.
+
+**Verification:**
+```bash
+# Check that PostgreSQL is only bound to localhost
+ss -tlnp | grep 5432
+# Should show: 127.0.0.1:5432 (NOT 0.0.0.0:5432)
+```
+
+#### 2. Use Strong Database Passwords
+
+The default password `postgres` is **extremely insecure** and must be changed for production.
+
+**Generate a strong password:**
+```bash
+openssl rand -base64 32
+```
+
+**Update your `.env` file:**
+```env
+POSTGRES_PASSWORD=YOUR_GENERATED_STRONG_PASSWORD_HERE
+DATABASE_URL="postgresql://postgres:YOUR_GENERATED_STRONG_PASSWORD_HERE@localhost:5432/dialog_ehr?schema=public"
+```
+
+**IMPORTANT:**
+- Never commit the `.env` file to version control (it's already in `.gitignore`)
+- Use different passwords for development, testing, and production environments
+- Store production passwords in a secure secrets management system
+
+#### 3. Additional Production Security Measures
+
+For production deployments, also consider:
+
+- **Enable firewall:** Use `ufw` or `iptables` to restrict incoming connections
+- **Use SSL/TLS:** Enable SSL for PostgreSQL connections
+- **Regular backups:** Implement automated database backups
+- **Monitor access logs:** Set up alerting for suspicious database access patterns
+- **Network isolation:** Use Docker networks to isolate database from public internet
+- **Keep software updated:** Regularly update PostgreSQL, Node.js, and dependencies
+
+**Example firewall setup:**
+```bash
+sudo ufw enable
+sudo ufw allow 22/tcp   # SSH
+sudo ufw allow 80/tcp   # HTTP
+sudo ufw allow 443/tcp  # HTTPS
+# Do NOT allow 5432/tcp (PostgreSQL should not be accessible from internet)
+```
+
+### Real-World Security Incident
+
+This security guidance was added after a ransomware attack on a development instance where:
+- PostgreSQL port 5432 was exposed to the internet (0.0.0.0:5432)
+- Default password `postgres` was used
+- No firewall was enabled
+- The database was completely deleted and replaced with a ransom note
+
+**The attack happened within hours of the database being exposed.** This demonstrates how quickly automated scanners find and exploit insecure configurations.
 
 ## Database Management
 
