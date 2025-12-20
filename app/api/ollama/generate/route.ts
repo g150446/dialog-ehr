@@ -63,17 +63,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 設定からollamaサーバーのURLを取得（データベースから直接読み込む）
+    // 設定を取得（データベースから直接読み込む）
     const settings = await prisma.appSettings.findMany();
     const settingsMap: Record<string, string> = {};
     settings.forEach(setting => {
       settingsMap[setting.key] = setting.value || '';
     });
-    
-    // デフォルト値
-    const DEFAULT_LLM_SERVER_URL = '';
-    const llmServerUrl = settingsMap['llmServerUrl'] || DEFAULT_LLM_SERVER_URL;
 
+    const groqEnabled = settingsMap['groqEnabled'] === 'true';
+    const groqApiKey = settingsMap['groqApiKey'] || '';
+    const llmServerUrl = settingsMap['llmServerUrl'] || '';
+
+    // Groqが有効な場合
+    if (groqEnabled) {
+      if (!groqApiKey || groqApiKey.trim() === '') {
+        return NextResponse.json(
+          { error: 'Groq API key is not configured' },
+          { status: 400 }
+        );
+      }
+
+      // Groq APIにリクエストを送信
+      const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+        }),
+      });
+
+      if (!groqResponse.ok) {
+        const errorText = await groqResponse.text();
+        console.error('Groq API error:', groqResponse.status, errorText);
+        return NextResponse.json(
+          { error: `Groq API error: ${groqResponse.status} ${groqResponse.statusText}` },
+          { status: groqResponse.status }
+        );
+      }
+
+      const groqData = await groqResponse.json();
+
+      // Groqのレスポンスを Ollama 形式に変換
+      return NextResponse.json({
+        response: groqData.choices?.[0]?.message?.content || '',
+      });
+    }
+
+    // Groqが無効な場合は従来のOllama APIを使用
     if (!llmServerUrl || llmServerUrl.trim() === '') {
       return NextResponse.json(
         { error: 'Ollama server URL is not configured' },
@@ -83,7 +128,7 @@ export async function POST(request: NextRequest) {
 
     // Ollama APIにリクエストを送信
     const ollamaApiUrl = `${llmServerUrl}/api/generate`;
-    
+
     const requestBody = JSON.stringify({
       model: 'ehr-gemma',
       prompt: prompt,
@@ -110,12 +155,12 @@ export async function POST(request: NextRequest) {
     const data = JSON.parse(response.data);
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error proxying to Ollama:', error);
+    console.error('Error proxying to LLM:', error);
     return NextResponse.json(
-      { 
-        error: error instanceof Error 
-          ? error.message 
-          : 'Failed to communicate with Ollama server' 
+      {
+        error: error instanceof Error
+          ? error.message
+          : 'Failed to communicate with LLM server'
       },
       { status: 500 }
     );

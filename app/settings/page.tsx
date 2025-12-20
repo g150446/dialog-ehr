@@ -10,6 +10,9 @@ export default function SettingsPage() {
     siteUrl: '',
     sttServerUrl: '',
     llmServerUrl: '',
+    groqEnabled: false,
+    groqApiKey: '',
+    fastVoiceInput: false,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -31,6 +34,9 @@ export default function SettingsPage() {
         siteUrl: 'https://macbook-m1:3000',
         sttServerUrl: 'https://macbook-m1:9000',
         llmServerUrl: '',
+        groqEnabled: false,
+        groqApiKey: '',
+        fastVoiceInput: false,
       });
     } finally {
       setIsLoading(false);
@@ -57,7 +63,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleChange = (key: keyof AppSettings, value: string) => {
+  const handleChange = (key: keyof AppSettings, value: string | boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
@@ -156,6 +162,86 @@ export default function SettingsPage() {
                 placeholder=""
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+            </div>
+
+            {/* Groq Toggle */}
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label htmlFor="groqEnabled" className="block text-sm font-medium text-gray-700">
+                    Groqを使用する
+                  </label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    有効にすると、Groq APIを使用して音声認識とLLM処理を行います
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={settings.groqEnabled}
+                  onClick={() => handleChange('groqEnabled', !settings.groqEnabled)}
+                  className={`${
+                    settings.groqEnabled ? 'bg-blue-600' : 'bg-gray-200'
+                  } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`${
+                      settings.groqEnabled ? 'translate-x-5' : 'translate-x-0'
+                    } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Groq API Key */}
+            {settings.groqEnabled && (
+              <div>
+                <label htmlFor="groqApiKey" className="block text-sm font-medium text-gray-700 mb-2">
+                  Groq APIキー
+                </label>
+                <input
+                  type="password"
+                  id="groqApiKey"
+                  value={settings.groqApiKey}
+                  onChange={(e) => handleChange('groqApiKey', e.target.value)}
+                  placeholder="gsk_..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Groq APIキーを入力してください。音声認識にはwhisper-large-v3-turbo、LLMにはopenai/gpt-oss-120bモデルを使用します
+                </p>
+              </div>
+            )}
+
+            {/* Fast Voice Input Toggle */}
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label htmlFor="fastVoiceInput" className="block text-sm font-medium text-gray-700">
+                    Fast Voice Input
+                  </label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    有効にすると、音声入力後に自動的にLLMサーバーに送信します
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={settings.fastVoiceInput}
+                  onClick={() => handleChange('fastVoiceInput', !settings.fastVoiceInput)}
+                  className={`${
+                    settings.fastVoiceInput ? 'bg-blue-600' : 'bg-gray-200'
+                  } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`${
+                      settings.fastVoiceInput ? 'translate-x-5' : 'translate-x-0'
+                    } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                  />
+                </button>
+              </div>
             </div>
 
             {/* Submit Button */}

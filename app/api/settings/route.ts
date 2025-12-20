@@ -6,6 +6,9 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   siteUrl: 'https://macbook-m1:3000',
   sttServerUrl: 'https://macbook-m1:9000',
   llmServerUrl: '',
+  groqEnabled: 'false',
+  groqApiKey: '',
+  fastVoiceInput: 'false',
 };
 
 // GET: 全設定を取得
@@ -47,8 +50,10 @@ export async function PUT(request: NextRequest) {
     
     // 各設定を更新または作成
     const updates = Object.keys(body).map(async (key) => {
-      const value = body[key] ?? '';
-      
+      // Convert all values to strings explicitly
+      const rawValue = body[key];
+      const value = typeof rawValue === 'boolean' ? String(rawValue) : (rawValue ?? '');
+
       return prisma.appSettings.upsert({
         where: { key },
         update: { value },

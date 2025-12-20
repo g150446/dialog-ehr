@@ -3,6 +3,9 @@ export interface AppSettings {
   siteUrl: string;
   sttServerUrl: string;
   llmServerUrl: string;
+  groqEnabled: boolean;
+  groqApiKey: string;
+  fastVoiceInput: boolean;
 }
 
 // デフォルト値
@@ -10,6 +13,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   siteUrl: 'https://macbook-m1:3000',
   sttServerUrl: 'https://macbook-m1:9000',
   llmServerUrl: '',
+  groqEnabled: false,
+  groqApiKey: '',
+  fastVoiceInput: false,
 };
 
 // 設定を取得
@@ -27,6 +33,9 @@ export async function getSettings(): Promise<AppSettings> {
       siteUrl: data.siteUrl || DEFAULT_SETTINGS.siteUrl,
       sttServerUrl: data.sttServerUrl || DEFAULT_SETTINGS.sttServerUrl,
       llmServerUrl: data.llmServerUrl || DEFAULT_SETTINGS.llmServerUrl,
+      groqEnabled: data.groqEnabled === 'true' || data.groqEnabled === true,
+      groqApiKey: data.groqApiKey || DEFAULT_SETTINGS.groqApiKey,
+      fastVoiceInput: data.fastVoiceInput === 'true' || data.fastVoiceInput === true,
     };
   } catch (error) {
     console.error('Error fetching settings:', error);
@@ -55,6 +64,9 @@ export async function updateSettings(settings: Partial<AppSettings>): Promise<Ap
       siteUrl: data.siteUrl || DEFAULT_SETTINGS.siteUrl,
       sttServerUrl: data.sttServerUrl || DEFAULT_SETTINGS.sttServerUrl,
       llmServerUrl: data.llmServerUrl || DEFAULT_SETTINGS.llmServerUrl,
+      groqEnabled: data.groqEnabled === 'true' || data.groqEnabled === true,
+      groqApiKey: data.groqApiKey || DEFAULT_SETTINGS.groqApiKey,
+      fastVoiceInput: data.fastVoiceInput === 'true' || data.fastVoiceInput === true,
     };
   } catch (error) {
     console.error('Error updating settings:', error);

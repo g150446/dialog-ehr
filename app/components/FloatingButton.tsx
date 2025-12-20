@@ -17,6 +17,8 @@ export default function FloatingButton() {
   const [isSupported, setIsSupported] = useState<boolean>(false);
   const [sttServerUrl, setSttServerUrl] = useState<string>(DEFAULT_SETTINGS.sttServerUrl);
   const [llmServerUrl, setLlmServerUrl] = useState<string>(DEFAULT_SETTINGS.llmServerUrl);
+  const [groqEnabled, setGroqEnabled] = useState<boolean>(DEFAULT_SETTINGS.groqEnabled);
+  const [fastVoiceInput, setFastVoiceInput] = useState<boolean>(DEFAULT_SETTINGS.fastVoiceInput);
   const [isOllamaLoading, setIsOllamaLoading] = useState<boolean>(false);
   const [ollamaResponse, setOllamaResponse] = useState<string>('');
   const [ollamaVitals, setOllamaVitals] = useState<any | null>(null);
@@ -37,11 +39,15 @@ export default function FloatingButton() {
         const settings = await getSettings();
         setSttServerUrl(settings.sttServerUrl || DEFAULT_SETTINGS.sttServerUrl);
         setLlmServerUrl(settings.llmServerUrl || DEFAULT_SETTINGS.llmServerUrl);
+        setGroqEnabled(settings.groqEnabled || DEFAULT_SETTINGS.groqEnabled);
+        setFastVoiceInput(settings.fastVoiceInput || DEFAULT_SETTINGS.fastVoiceInput);
       } catch (error) {
         console.error('Error loading server URLs from settings:', error);
         // エラー時はデフォルト値を使用
         setSttServerUrl(DEFAULT_SETTINGS.sttServerUrl);
         setLlmServerUrl(DEFAULT_SETTINGS.llmServerUrl);
+        setGroqEnabled(DEFAULT_SETTINGS.groqEnabled);
+        setFastVoiceInput(DEFAULT_SETTINGS.fastVoiceInput);
       }
     };
     loadSettings();
@@ -196,10 +202,17 @@ export default function FloatingButton() {
       const formData = new FormData();
       formData.append('audio_file', audioBlob, 'recording.webm');
 
-      // Whisper serverに送信（設定から読み込んだURLを使用）
-      const whisperServerUrl = `${sttServerUrl}/transcribe`;
-      
-      const response = await fetch(whisperServerUrl, {
+      // 最新の設定を読み込む
+      const settings = await getSettings();
+      const currentGroqEnabled = settings.groqEnabled || DEFAULT_SETTINGS.groqEnabled;
+      const currentFastVoiceInput = settings.fastVoiceInput || DEFAULT_SETTINGS.fastVoiceInput;
+
+      // Groqが有効な場合はGroq API、無効な場合はWhisper serverを使用
+      const transcribeUrl = currentGroqEnabled
+        ? '/api/groq/transcribe'
+        : `${sttServerUrl}/transcribe`;
+
+      const response = await fetch(transcribeUrl, {
         method: 'POST',
         body: formData,
       });
@@ -209,21 +222,33 @@ export default function FloatingButton() {
       }
 
       const data = await response.json();
-      setTranscription(data.transcription || '');
+      const transcribedText = data.transcription || '';
+      setTranscription(transcribedText);
       setRecordingState('completed');
+
+      // Fast Voice Input が有効な場合は自動的にLLMに送信
+      if (currentFastVoiceInput && transcribedText.trim() !== '') {
+        // 少し待ってからLLMに送信（UIの更新を確認できるように）
+        setTimeout(() => {
+          sendToOllama(transcribedText);
+        }, 100);
+      }
     } catch (err) {
-      console.error('Error sending to Whisper server:', err);
+      console.error('Error sending to transcription server:', err);
       setError(
-        err instanceof Error 
-          ? `エラー: ${err.message}` 
-          : '音声の変換に失敗しました。Whisper serverが起動しているか確認してください。'
+        err instanceof Error
+          ? `エラー: ${err.message}`
+          : '音声の変換に失敗しました。サーバーが起動しているか確認してください。'
       );
       setRecordingState('idle');
     }
   };
 
-  const sendToOllama = async () => {
-    if (!transcription || transcription.trim() === '') {
+  const sendToOllama = async (textToSend?: string) => {
+    // textToSendが指定されていればそれを使用、なければtranscription stateを使用
+    const textContent = textToSend || transcription;
+
+    if (!textContent || textContent.trim() === '') {
       setError('送信するテキストがありません。');
       return;
     }
@@ -240,25 +265,28 @@ export default function FloatingButton() {
       // 最新の設定を読み込む（設定ページで更新された場合に対応）
       const settings = await getSettings();
       const currentLlmServerUrl = settings.llmServerUrl || DEFAULT_SETTINGS.llmServerUrl;
-      
+      const currentGroqEnabled = settings.groqEnabled || DEFAULT_SETTINGS.groqEnabled;
+
       // 状態も更新する
       setLlmServerUrl(currentLlmServerUrl);
+      setGroqEnabled(currentGroqEnabled);
 
       // デバッグ用: 設定が読み込まれているか確認
-      if (!currentLlmServerUrl || currentLlmServerUrl.trim() === '') {
+      if (!currentGroqEnabled && (!currentLlmServerUrl || currentLlmServerUrl.trim() === '')) {
         setError('Ollamaサーバーのアドレスが設定されていません。設定ページでollamaサーバーのアドレスを設定してください。');
         setIsOllamaLoading(false);
         return;
       }
 
-      // Next.js APIルート経由でollamaにリクエストを送信（CORSとSSL証明書の問題を回避）
-      const response = await fetch('/api/ollama/generate', {
+      // Next.js APIルート経由でLLMにリクエストを送信（CORSとSSL証明書の問題を回避）
+      const llmEndpoint = currentGroqEnabled ? '/api/groq/generate' : '/api/ollama/generate';
+      const response = await fetch(llmEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: transcription,
+          prompt: textContent,
         }),
       }).catch((fetchError) => {
         // ネットワークエラーや接続エラーの場合
@@ -414,11 +442,11 @@ export default function FloatingButton() {
         setOllamaJsonRecognized(false);
       }
     } catch (err) {
-      console.error('Error sending to Ollama:', err);
+      console.error(`Error sending to ${groqEnabled ? 'Groq' : 'Ollama'}:`, err);
       setError(
-        err instanceof Error 
-          ? `エラー: ${err.message}` 
-          : 'Ollamaへの送信に失敗しました。サーバーが起動しているか、設定を確認してください。'
+        err instanceof Error
+          ? `エラー: ${err.message}`
+          : `${groqEnabled ? 'Groq' : 'Ollama'}への送信に失敗しました。サーバーが起動しているか、設定を確認してください。`
       );
       setOllamaVitals(null);
     } finally {
@@ -683,22 +711,22 @@ export default function FloatingButton() {
                 </div>
               )}
 
-              {/* Ollama Loading State */}
+              {/* LLM Loading State */}
               {isOllamaLoading && (
                 <div className="mb-6">
                   <div className="flex flex-col items-center justify-center gap-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                     <p className="text-gray-600">
-                      Ollamaに送信中...
+                      {groqEnabled ? 'Groqに送信中...' : 'Ollamaに送信中...'}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Ollama Response */}
+              {/* LLM Response */}
               {ollamaResponse && !isOllamaLoading && (
                 <div className="mb-6">
-                  <p className="text-sm text-gray-600 mb-2">Ollama応答:</p>
+                  <p className="text-sm text-gray-600 mb-2">{groqEnabled ? 'Groq' : 'Ollama'}応答:</p>
                   <pre className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left text-gray-800 whitespace-pre-wrap break-words text-sm">
                     {ollamaResponse}
                   </pre>
@@ -739,14 +767,14 @@ export default function FloatingButton() {
               <div className="flex gap-3 justify-center">
                 {recordingState === 'completed' && !isOllamaLoading && (
                   <>
-                    {/* まだOllama解析をしていない or 再送したい場合 */}
+                    {/* まだLLM解析をしていない or 再送したい場合 */}
                     {ollamaJsonRecognized === null && (
                       <button
                         onClick={sendToOllama}
                         disabled={isSavingMonitoringRecord}
                         className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                       >
-                        Send to ollama
+                        {groqEnabled ? 'Send to groq' : 'Send to ollama'}
                       </button>
                     )}
 
