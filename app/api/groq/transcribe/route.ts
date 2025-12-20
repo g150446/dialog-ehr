@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     const groqFormData = new FormData();
     groqFormData.append('file', audioBlob, 'audio.webm');
     groqFormData.append('model', 'whisper-large-v3-turbo');
+    groqFormData.append('language', 'ja');
     groqFormData.append('response_format', 'json');
 
     // Call Groq Transcription API
