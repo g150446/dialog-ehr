@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { getSettings, updateSettings, type AppSettings } from '@/lib/settings';
 
 export default function SettingsPage() {
@@ -81,17 +82,34 @@ export default function SettingsPage() {
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 border-b-2 border-blue-800 px-3 md:px-6 py-2 md:py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3 md:gap-6">
           <h1 className="text-white text-base md:text-lg font-semibold tracking-wide">Dialog Hospital</h1>
-          <div className="h-6 w-px bg-blue-500 hidden md:block"></div>
-          <div className="flex gap-2 md:gap-3 text-xs md:text-sm text-blue-100">
-            <span className="hover:text-white cursor-pointer">ヘルプ(H)</span>
-          </div>
         </div>
-        <button
-          onClick={() => router.push('/')}
-          className="px-3 md:px-4 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs md:text-sm text-gray-700 font-medium shadow-sm transition-colors"
-        >
-          戻る
-        </button>
+        <div className="flex items-center gap-2 md:gap-3">
+          <Link
+            href="/"
+            className="px-3 md:px-4 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs md:text-sm text-gray-700 font-medium shadow-sm transition-colors"
+          >
+            患者一覧
+          </Link>
+          <Link
+            href="/users"
+            className="px-3 md:px-4 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs md:text-sm text-gray-700 font-medium shadow-sm transition-colors"
+          >
+            ユーザー管理
+          </Link>
+          <button
+            onClick={async () => {
+              try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+              } catch (error) {
+                console.error('Logout error:', error);
+              }
+            }}
+            className="px-3 md:px-4 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs md:text-sm text-gray-700 font-medium shadow-sm transition-colors"
+          >
+            ログアウト
+          </button>
+        </div>
       </div>
 
       {/* Settings Content */}

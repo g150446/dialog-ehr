@@ -11,7 +11,6 @@ function transformMedicalRecord(mr: any): MedicalRecord {
     visitType: mr.visitType || undefined,
     dayOfStay: mr.dayOfStay || undefined,
     progressNote: mr.progressNote || undefined,
-    vitalSigns: mr.vitalSigns as MedicalRecord['vitalSigns'] || undefined,
     laboratoryResults: mr.laboratoryResults as MedicalRecord['laboratoryResults'] || undefined,
     imagingResults: mr.imagingResults || undefined,
     medications: mr.medications as MedicalRecord['medications'] || undefined,

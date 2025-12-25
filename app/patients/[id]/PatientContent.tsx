@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Patient, MedicalRecord, MonitoringRecord } from '@/types/patient';
 import VitalSignsChart from '@/app/components/VitalSignsChart';
+import EditMedicalRecordModal from '@/app/components/EditMedicalRecordModal';
+import RecordHistoryModal from '@/app/components/RecordHistoryModal';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -29,19 +31,25 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
   // State for editing and menu management
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [openMenuRecordId, setOpenMenuRecordId] = useState<string | null>(null);
+  const [editingMedicalRecordId, setEditingMedicalRecordId] = useState<string | null>(null);
+  const [openMedicalRecordMenuId, setOpenMedicalRecordMenuId] = useState<string | null>(null);
+  const [showMedicalRecordHistory, setShowMedicalRecordHistory] = useState(false);
+  const [selectedMedicalRecordForHistory, setSelectedMedicalRecordForHistory] = useState<string | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingRecordForModal, setEditingRecordForModal] = useState<MedicalRecord | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   // Form state for new medical record
   const [newRecord, setNewRecord] = useState({
-    progressNote: '',
-    vitalSigns: {
-      temperature: '',
-      bloodPressure: '',
-      heartRate: '',
-      spO2: '',
-      oxygenFlow: ''
-    }
+    progressNote: ''
   });
+
+  // Editing medical record state
+  const [editingMedicalRecord, setEditingMedicalRecord] = useState<{
+    id: string;
+    date: string;
+    progressNote: string;
+  } | null>(null);
 
   // State for monitoring record inputs
   const [monitoringRecord, setMonitoringRecord] = useState({
@@ -106,6 +114,17 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     return diffDays >= 0 ? diffDays + 1 : undefined;
   };
 
+  // Helper function to translate role codes to Japanese labels
+  const getRoleLabel = (role: string): string => {
+    const roleLabels: { [key: string]: string } = {
+      'DOCTOR': '医師',
+      'NURSE': '看護師',
+      'PHARMACIST': '薬剤師',
+      'MEDICAL_CLERK': '医療事務',
+    };
+    return roleLabels[role] || role;
+  };
+
   // Handle edit monitoring record
   const handleEditMonitoringRecord = (record: MonitoringRecord) => {
     setEditingRecordId(record.id);
@@ -152,9 +171,18 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     }, 100);
   };
 
+  // Handle edit medical record
+  const handleEditMedicalRecord = (record: MedicalRecord) => {
+    setEditingRecordForModal(record);
+    setEditModalOpen(true);
+    setOpenMedicalRecordMenuId(null);
+  };
+
   // Handle cancel edit
   const handleCancelEdit = () => {
     setEditingRecordId(null);
+    setEditingMedicalRecordId(null);
+    setEditingMedicalRecord(null);
     setMonitoringRecord({
       vitalSigns: {
         temperature: '',
@@ -205,27 +233,84 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     }
   };
 
+  // Handle delete medical record
+  const handleDeleteMedicalRecord = async (recordId: string) => {
+    if (!window.confirm('この診療録を削除してもよろしいですか？\n\n削除された診療録は履歴から復元可能です。')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/patients/${patient.id}/medical-records/${recordId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        const errorMessage = data.error || `削除に失敗しました (${response.status})`;
+
+        // 認証エラーの場合はログインページにリダイレクト
+        if (response.status === 401) {
+          alert('セッションが切れています。ログインページに移動します。');
+          window.location.href = '/login';
+          return;
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      alert('診療録を削除しました。');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting medical record:', error);
+      const message = error instanceof Error ? error.message : '診療録の削除に失敗しました。もう一度お試しください。';
+      alert(message);
+    }
+  };
+
+  // Handle show medical record history
+  const handleShowMedicalRecordHistory = (recordId: string) => {
+    setSelectedMedicalRecordForHistory(recordId);
+    setShowMedicalRecordHistory(true);
+    setOpenMedicalRecordMenuId(null);
+  };
+
+  const handleCloseMedicalRecordHistory = () => {
+    setShowMedicalRecordHistory(false);
+    setSelectedMedicalRecordForHistory(null);
+  };
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (openMenuRecordId !== null) {
         setOpenMenuRecordId(null);
       }
+      if (openMedicalRecordMenuId !== null) {
+        setOpenMedicalRecordMenuId(null);
+      }
     };
 
-    if (openMenuRecordId !== null) {
+    if (openMenuRecordId !== null || openMedicalRecordMenuId !== null) {
       document.addEventListener('click', handleClickOutside);
       return () => {
         document.removeEventListener('click', handleClickOutside);
       };
     }
-  }, [openMenuRecordId]);
+  }, [openMenuRecordId, openMedicalRecordMenuId]);
 
   // Handle ESC key to cancel edit
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && editingRecordId !== null) {
-        handleCancelEdit();
+      if (event.key === 'Escape') {
+        if (editingRecordId !== null || editingMedicalRecordId !== null) {
+          handleCancelEdit();
+        }
+        if (openMenuRecordId !== null) {
+          setOpenMenuRecordId(null);
+        }
+        if (openMedicalRecordMenuId !== null) {
+          setOpenMedicalRecordMenuId(null);
+        }
       }
     };
 
@@ -243,53 +328,64 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
     try {
       const currentDate = new Date().toISOString().split('T')[0];
-      const patientIsInpatient = isInpatient(patient);
-      const recordType = patientIsInpatient ? '入院診療録' : '外来受診';
-      const visitType = patientIsInpatient ? '入院' : '外来';
-      
-      const dayOfStay = patientIsInpatient && patient.admissionDate
-        ? calculateDayOfStay(patient.admissionDate, currentDate)
-        : undefined;
 
-      const payload = {
-        id: crypto.randomUUID(),
-        date: currentDate,
-        type: recordType,
-        visitType: visitType,
-        dayOfStay: dayOfStay,
-        progressNote: newRecord.progressNote || null,
-        vitalSigns: {
-          temperature: newRecord.vitalSigns.temperature || null,
-          bloodPressure: newRecord.vitalSigns.bloodPressure || null,
-          heartRate: newRecord.vitalSigns.heartRate || null,
-          spO2: newRecord.vitalSigns.spO2 || null,
-          oxygenFlow: newRecord.vitalSigns.oxygenFlow || null,
-        },
-      };
+      // Check if in edit mode or create mode
+      if (editingMedicalRecordId && editingMedicalRecord) {
+        // Edit mode: PUT request
+        const payload = {
+          date: editingMedicalRecord.date,
+          progressNote: editingMedicalRecord.progressNote || null,
+        };
 
-      const response = await fetch(`/api/patients/${patient.id}/medical-records`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+        const response = await fetch(`/api/patients/${patient.id}/medical-records/${editingMedicalRecordId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to save medical record');
+        if (!response.ok) {
+          throw new Error('Failed to update medical record');
+        }
+
+        alert('診療録を更新しました。');
+      } else {
+        // Create mode: POST request
+        const patientIsInpatient = isInpatient(patient);
+        const recordType = patientIsInpatient ? '入院診療録' : '外来受診';
+        const visitType = patientIsInpatient ? '入院' : '外来';
+
+        const dayOfStay = patientIsInpatient && patient.admissionDate
+          ? calculateDayOfStay(patient.admissionDate, currentDate)
+          : undefined;
+
+        const payload = {
+          id: crypto.randomUUID(),
+          date: currentDate,
+          type: recordType,
+          visitType: visitType,
+          dayOfStay: dayOfStay,
+          progressNote: newRecord.progressNote || null,
+        };
+
+        const response = await fetch(`/api/patients/${patient.id}/medical-records`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save medical record');
+        }
+
+        alert('診療録を保存しました。');
       }
 
       // Reset form
-      setNewRecord({
-        progressNote: '',
-        vitalSigns: {
-          temperature: '',
-          bloodPressure: '',
-          heartRate: '',
-          spO2: '',
-          oxygenFlow: ''
-        }
-      });
+      setNewRecord({ progressNote: '' });
+      setEditingMedicalRecordId(null);
+      setEditingMedicalRecord(null);
 
       // Reload page to show updated data
       window.location.reload();
@@ -1126,74 +1222,141 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                         weekday: 'short'
                       });
                       
+                      const isDeleted = !!record.deletedAt;
+
+                      // Debug: Show deletion status
+                      console.log('Record:', record.id, 'deletedAt:', record.deletedAt, 'isDeleted:', isDeleted);
+
+                      // TEMPORARY: Show debug info on ALL records
+                      const debugInfo = `deletedAt=${record.deletedAt ? 'YES' : 'NO'} | isDeleted=${isDeleted}`;
+
+                      if (isDeleted) {
+                        // Simplified display for deleted records
+                        return (
+                          <div key={record.id} className="bg-red-50 border-2 border-red-300 rounded-lg p-3 md:p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <span className="font-bold text-red-700">{dateStr}</span>
+                                <span className="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded">
+                                  削除済み
+                                </span>
+                                <span className="text-xs bg-yellow-200 px-1">DEBUG: isDeleted={String(isDeleted)} deletedAt={String(record.deletedAt)}</span>
+                                {record.deletedBy && (
+                                  <span className="text-xs text-gray-600">削除者: {record.deletedBy}</span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleShowMedicalRecordHistory(record.id)}
+                                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                              >
+                                履歴を表示
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div key={record.id} className="bg-white rounded-lg border-2 border-gray-300 shadow-sm p-3 md:p-5">
                           {/* Record Header */}
                           <div className="mb-3 md:mb-4 pb-2 md:pb-3 border-b-2 border-gray-400">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                              <div className="flex items-center gap-3">
-                                <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded">
-                                  【{record.type}】
-                                </span>
-                                <span className="font-bold text-gray-800">{dateStr}</span>
-                                {record.visitType && (
-                                  <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">
-                                    {record.visitType}
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                                <div className="flex items-center gap-3">
+                                  <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded">
+                                    【{record.type}】
                                   </span>
-                                )}
-                                {record.dayOfStay && (
-                                  <span className="px-2 py-1 bg-orange-200 text-orange-800 text-xs rounded font-medium">
-                                    入院{record.dayOfStay}日目
-                                  </span>
+                                  <span className="font-bold text-gray-800">{dateStr}</span>
+                                  <span className="text-xs bg-orange-200 px-2 py-1 font-mono">{debugInfo}</span>
+                                  {record.visitType && (
+                                    <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">
+                                      {record.visitType}
+                                    </span>
+                                  )}
+                                  {record.dayOfStay && (
+                                    <span className="px-2 py-1 bg-orange-200 text-orange-800 text-xs rounded font-medium">
+                                      入院{record.dayOfStay}日目
+                                    </span>
+                                  )}
+                                </div>
+                                {record.physician && (
+                                  <span className="text-sm text-gray-600">担当医: {record.physician}</span>
                                 )}
                               </div>
-                              {record.physician && (
-                                <span className="text-sm text-gray-600">担当医: {record.physician}</span>
-                              )}
+
+                              {/* Hamburger Menu */}
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMedicalRecordMenuId(
+                                      openMedicalRecordMenuId === record.id ? null : record.id
+                                    );
+                                  }}
+                                  className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                  aria-label="メニューを開く"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                          d="M4 6h16M4 12h16M4 18h16" />
+                                  </svg>
+                                </button>
+
+                                {/* Dropdown Menu */}
+                                {openMedicalRecordMenuId === record.id && (
+                                  <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-300 rounded shadow-lg z-10">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditMedicalRecord(record);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                    >
+                                      編集
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteMedicalRecord(record.id);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors"
+                                    >
+                                      削除
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleShowMedicalRecordHistory(record.id);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 transition-colors"
+                                    >
+                                      履歴
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
 
-                          {/* Vital Signs */}
-                          {record.vitalSigns && (
-                            <div className="mb-3 md:mb-4 p-2 md:p-3 bg-blue-50 rounded border border-blue-200">
-                              <div className="text-xs font-bold text-blue-800 mb-2">バイタルサイン</div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
-                                {record.vitalSigns.temperature && (
-                                  <div>
-                                    <span className="text-gray-600">体温:</span>
-                                    <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.temperature}</span>
-                                  </div>
-                                )}
-                                {record.vitalSigns.bloodPressure && (
-                                  <div>
-                                    <span className="text-gray-600">血圧:</span>
-                                    <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.bloodPressure}</span>
-                                  </div>
-                                )}
-                                {record.vitalSigns.heartRate && (
-                                  <div>
-                                    <span className="text-gray-600">心拍数:</span>
-                                    <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.heartRate}</span>
-                                  </div>
-                                )}
-                                {record.vitalSigns.spO2 && (
-                                  <div>
-                                    <span className="text-gray-600">SpO2:</span>
-                                    <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.spO2}</span>
-                                  </div>
-                                )}
-                                {record.vitalSigns.oxygenFlow && (
-                                  <div>
-                                    <span className="text-gray-600">酸素流量:</span>
-                                    <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.oxygenFlow}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                          {/* Author Information */}
+                              {(record.authorName || record.authorRole) && (
+                                <div className="mb-3 md:mb-4 text-xs md:text-sm text-gray-600">
+                                  記載者: {record.authorRole && (
+                                    <span className="font-medium">{getRoleLabel(record.authorRole)}</span>
+                                  )}
+                                  {record.authorName && (
+                                    <span className="ml-2 font-medium text-gray-800">{record.authorName}</span>
+                                  )}
+                                </div>
+                              )}
 
-                          {/* Progress Note */}
-                          <div className="space-y-3 md:space-y-4">
+                              {/* Progress Note */}
+                              <div className="space-y-3 md:space-y-4">
                             {record.progressNote && (
                               <div>
                                 <div className="font-bold text-xs md:text-sm text-gray-700 mb-1.5 flex items-center">
@@ -1273,70 +1436,137 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                                 day: 'numeric',
                                 weekday: 'short'
                               });
-                              
+
+                              const isDeleted = !!record.deletedAt;
+
+                              // Debug: Show deletion status
+                              console.log('Record:', record.id, 'deletedAt:', record.deletedAt, 'isDeleted:', isDeleted);
+
+                              // TEMPORARY: Show debug info on ALL records
+                              const debugInfo = `deletedAt=${record.deletedAt ? 'YES' : 'NO'} | isDeleted=${isDeleted}`;
+
+                              if (isDeleted) {
+                                // Simplified display for deleted records
+                                return (
+                                  <div key={record.id} className="bg-red-50 border-2 border-red-300 rounded-lg p-3 md:p-4">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex items-center gap-3">
+                                        <span className="font-bold text-red-700">{dateStr}</span>
+                                        <span className="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded">
+                                          削除済み
+                                        </span>
+                                        <span className="text-xs bg-yellow-200 px-1">DEBUG: isDeleted={String(isDeleted)} deletedAt={String(record.deletedAt)}</span>
+                                        {record.deletedBy && (
+                                          <span className="text-xs text-gray-600">削除者: {record.deletedBy}</span>
+                                        )}
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleShowMedicalRecordHistory(record.id)}
+                                        className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                                      >
+                                        履歴を表示
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
                               return (
                                 <div key={record.id} className="bg-white rounded-lg border-2 border-gray-300 shadow-sm p-3 md:p-5">
                                   {/* Record Header */}
                                   <div className="mb-3 md:mb-4 pb-2 md:pb-3 border-b-2 border-gray-400">
-                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                                      <div className="flex items-center gap-3">
-                                        <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded">
-                                          【{record.type}】
-                                        </span>
-                                        <span className="font-bold text-gray-800">{dateStr}</span>
-                                        {record.visitType && (
-                                          <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">
-                                            {record.visitType}
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex flex-col md:flex-row md:items-center gap-2">
+                                        <div className="flex items-center gap-3">
+                                          <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded">
+                                            【{record.type}】
                                           </span>
-                                        )}
-                                        {record.dayOfStay && (
-                                          <span className="px-2 py-1 bg-orange-200 text-orange-800 text-xs rounded font-medium">
-                                            入院{record.dayOfStay}日目
-                                          </span>
+                                          <span className="font-bold text-gray-800">{dateStr}</span>
+                                          <span className="text-xs bg-orange-200 px-2 py-1 font-mono">{debugInfo}</span>
+                                          {record.visitType && (
+                                            <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">
+                                              {record.visitType}
+                                            </span>
+                                          )}
+                                          {record.dayOfStay && (
+                                            <span className="px-2 py-1 bg-orange-200 text-orange-800 text-xs rounded font-medium">
+                                              入院{record.dayOfStay}日目
+                                            </span>
+                                          )}
+                                        </div>
+                                        {record.physician && (
+                                          <span className="text-sm text-gray-600">担当医: {record.physician}</span>
                                         )}
                                       </div>
-                                      {record.physician && (
-                                        <span className="text-sm text-gray-600">担当医: {record.physician}</span>
-                                      )}
+
+                                      {/* Hamburger Menu */}
+                                      <div className="relative">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenMedicalRecordMenuId(
+                                              openMedicalRecordMenuId === record.id ? null : record.id
+                                            );
+                                          }}
+                                          className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                          aria-label="メニューを開く"
+                                        >
+                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                  d="M4 6h16M4 12h16M4 18h16" />
+                                          </svg>
+                                        </button>
+
+                                        {/* Dropdown Menu */}
+                                        {openMedicalRecordMenuId === record.id && (
+                                          <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-300 rounded shadow-lg z-10">
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEditMedicalRecord(record);
+                                              }}
+                                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                            >
+                                              編集
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteMedicalRecord(record.id);
+                                              }}
+                                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors"
+                                            >
+                                              削除
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleShowMedicalRecordHistory(record.id);
+                                              }}
+                                              className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 transition-colors"
+                                            >
+                                              履歴
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Vital Signs */}
-                                  {record.vitalSigns && (
-                                    <div className="mb-3 md:mb-4 p-2 md:p-3 bg-blue-50 rounded border border-blue-200">
-                                      <div className="text-xs font-bold text-blue-800 mb-2">バイタルサイン</div>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs md:text-sm">
-                                        {record.vitalSigns.temperature && (
-                                          <div>
-                                            <span className="text-gray-600">体温:</span>
-                                            <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.temperature}</span>
-                                          </div>
-                                        )}
-                                        {record.vitalSigns.bloodPressure && (
-                                          <div>
-                                            <span className="text-gray-600">血圧:</span>
-                                            <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.bloodPressure}</span>
-                                          </div>
-                                        )}
-                                        {record.vitalSigns.heartRate && (
-                                          <div>
-                                            <span className="text-gray-600">心拍数:</span>
-                                            <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.heartRate}</span>
-                                          </div>
-                                        )}
-                                        {record.vitalSigns.spO2 && (
-                                          <div>
-                                            <span className="text-gray-600">SpO2:</span>
-                                            <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.spO2}</span>
-                                          </div>
-                                        )}
-                                        {record.vitalSigns.oxygenFlow && (
-                                          <div>
-                                            <span className="text-gray-600">酸素流量:</span>
-                                            <span className="ml-1 font-medium text-gray-800">{record.vitalSigns.oxygenFlow}</span>
-                                          </div>
-                                        )}
-                                      </div>
+                                  {/* Author Information */}
+                                  {(record.authorName || record.authorRole) && (
+                                    <div className="mb-3 md:mb-4 text-xs md:text-sm text-gray-600">
+                                      記載者: {record.authorRole && (
+                                        <span className="font-medium">{getRoleLabel(record.authorRole)}</span>
+                                      )}
+                                      {record.authorName && (
+                                        <span className="ml-2 font-medium text-gray-800">{record.authorName}</span>
+                                      )}
                                     </div>
                                   )}
 
@@ -2129,7 +2359,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               {!showPastRecordsOnly && !showMonitoring && !showProgressChart && (
               <div className={`${shouldUseTwoColumns ? 'w-1/2' : 'w-full'}`}>
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-0 rounded-lg border-2 border-gray-300 shadow-sm">
-                    <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">新規診療録入力</h3>
+                    <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">{editingMedicalRecordId ? '診療録編集' : '新規診療録入力'}</h3>
                     <form onSubmit={handleSaveMedicalRecord} className="space-y-4">
                       {/* Progress Note */}
                       <div>
@@ -2138,25 +2368,36 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                           <span>Progress Note</span>
                         </div>
                         <textarea
-                          value={newRecord.progressNote}
-                          onChange={(e) => setNewRecord({ ...newRecord, progressNote: e.target.value })}
+                          value={editingMedicalRecordId ? editingMedicalRecord?.progressNote || '' : newRecord.progressNote}
+                          onChange={(e) => {
+                            if (editingMedicalRecordId) {
+                              setEditingMedicalRecord({
+                                ...editingMedicalRecord!,
+                                progressNote: e.target.value
+                              });
+                            } else {
+                              setNewRecord({ ...newRecord, progressNote: e.target.value });
+                            }
+                          }}
                           className="w-full pl-4 md:pl-8 text-xs md:text-sm text-gray-800 bg-blue-50 p-2 md:p-3 rounded border-l-4 border-blue-500 border-t border-r border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[400px] md:min-h-[600px]"
                         />
                       </div>
 
                       {/* Submit Button */}
                       <div className="flex justify-end gap-2 pt-2">
+                        {editingMedicalRecordId && (
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs md:text-sm font-medium transition-colors"
+                          >
+                            キャンセル
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => setNewRecord({
-                            progressNote: '',
-                            vitalSigns: {
-                              temperature: '',
-                              bloodPressure: '',
-                              heartRate: '',
-                              spO2: '',
-                              oxygenFlow: ''
-                            }
+                            progressNote: ''
                           })}
                           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs md:text-sm font-medium transition-colors"
                         >
@@ -2167,7 +2408,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                           disabled={isSavingMedicalRecord}
                           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded text-xs md:text-sm font-medium transition-colors shadow-sm"
                         >
-                          {isSavingMedicalRecord ? '保存中...' : '保存'}
+                          {isSavingMedicalRecord ? '保存中...' : (editingMedicalRecordId ? '更新' : '保存')}
                         </button>
                       </div>
                     </form>
@@ -2485,6 +2726,27 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
           )}
         </div>
       </div>
+
+      {/* Edit Medical Record Modal */}
+      <EditMedicalRecordModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        record={editingRecordForModal}
+        patientId={patient.id}
+        onSave={() => {
+          setEditModalOpen(false);
+          window.location.reload();
+        }}
+      />
+
+      {/* Medical Record History Modal */}
+      <RecordHistoryModal
+        isOpen={showMedicalRecordHistory}
+        onClose={handleCloseMedicalRecordHistory}
+        recordId={selectedMedicalRecordForHistory || ''}
+        recordType="medical"
+        patientId={patient.id}
+      />
     </>
   );
 }

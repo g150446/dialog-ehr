@@ -116,7 +116,8 @@ async function createMonitoringRecord() {
         date: day1Date,
         // Vital Signs
         temperature: 36.8,
-        bloodPressure: '120/80',
+        systolicBloodPressure: 120,
+        diastolicBloodPressure: 80,
         heartRate: 72,
         spO2: 98,
         oxygenFlow: 0,
@@ -137,7 +138,7 @@ async function createMonitoringRecord() {
     console.log('Record ID:', monitoringRecord.id);
     console.log('Date:', monitoringRecord.date instanceof Date ? monitoringRecord.date.toISOString() : monitoringRecord.date);
     console.log('Temperature:', monitoringRecord.temperature, '°C');
-    console.log('Blood Pressure:', monitoringRecord.bloodPressure, 'mmHg');
+    console.log('Blood Pressure:', `${monitoringRecord.systolicBloodPressure}/${monitoringRecord.diastolicBloodPressure}`, 'mmHg');
     console.log('Heart Rate:', monitoringRecord.heartRate, 'bpm');
     console.log('SpO2:', monitoringRecord.spO2, '%');
     console.log('Weight:', monitoringRecord.weight, 'kg');

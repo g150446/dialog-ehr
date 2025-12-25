@@ -1,5 +1,8 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { prisma } from '@/lib/db';
+import { useRouter } from 'next/navigation';
 import { Patient, Visit, MedicalRecord } from '@/types/patient';
 import PatientSearchModal from '@/app/components/PatientSearchModal';
 
@@ -64,7 +67,6 @@ function transformPatient(patient: any): Patient {
       visitType: mr.visitType || undefined,
       dayOfStay: mr.dayOfStay || undefined,
       progressNote: mr.progressNote || undefined,
-      vitalSigns: mr.vitalSigns as MedicalRecord['vitalSigns'] || undefined,
       laboratoryResults: mr.laboratoryResults as MedicalRecord['laboratoryResults'] || undefined,
       imagingResults: mr.imagingResults || undefined,
       medications: mr.medications as MedicalRecord['medications'] || undefined,
@@ -74,28 +76,55 @@ function transformPatient(patient: any): Patient {
   };
 }
 
-export default async function HomePage() {
-  let patients: Patient[] = [];
-  
-  try {
-    const dbPatients = await prisma.patient.findMany({
-      include: {
-        visits: {
-          orderBy: {
-            date: 'desc',
-          },
-        },
-        medicalRecords: {
-          orderBy: {
-            date: 'desc',
-          },
-        },
-      },
-    });
-    
-    patients = dbPatients.map(transformPatient);
-  } catch (error) {
-    console.error('Failed to load patients:', error);
+export default function HomePage() {
+  const router = useRouter();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadPatients();
+  }, []);
+
+  const loadPatients = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/patients');
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to load patients');
+      }
+      const data = await response.json();
+      setPatients(data);
+    } catch (error) {
+      console.error('Failed to load patients:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   return (
@@ -114,6 +143,12 @@ export default async function HomePage() {
         <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto flex-wrap">
           <PatientSearchModal />
           <Link
+            href="/users"
+            className="px-3 md:px-4 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs md:text-sm text-gray-700 font-medium shadow-sm transition-colors"
+          >
+            ユーザー管理
+          </Link>
+          <Link
             href="/settings"
             className="px-3 md:px-4 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs md:text-sm text-gray-700 font-medium shadow-sm transition-colors flex items-center justify-center"
             aria-label="設定"
@@ -131,7 +166,10 @@ export default async function HomePage() {
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
             </svg>
           </Link>
-          <button className="px-3 md:px-4 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs md:text-sm text-gray-700 font-medium shadow-sm transition-colors">
+          <button
+            onClick={handleLogout}
+            className="px-3 md:px-4 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs md:text-sm text-gray-700 font-medium shadow-sm transition-colors"
+          >
             ログアウト
           </button>
           <div className="flex gap-1 md:gap-1.5">

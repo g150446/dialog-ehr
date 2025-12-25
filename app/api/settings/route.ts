@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireAuth, requireAdmin } from '@/lib/api-auth';
 
 // デフォルト値の定義
 const DEFAULT_SETTINGS: Record<string, string> = {
@@ -12,8 +13,11 @@ const DEFAULT_SETTINGS: Record<string, string> = {
 };
 
 // GET: 全設定を取得
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // 認証チェック (全ての認証済みユーザーがアクセス可能)
+    await requireAuth(request);
+
     const settings = await prisma.appSettings.findMany();
     
     // key-valueオブジェクトに変換
@@ -29,7 +33,10 @@ export async function GET() {
     });
     
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
+    }
     console.error('Error fetching settings:', error);
     // エラーが発生してもデフォルト値を返す（アプリが動作し続けるように）
     return NextResponse.json(DEFAULT_SETTINGS);
@@ -39,6 +46,9 @@ export async function GET() {
 // PUT: 設定を更新
 export async function PUT(request: NextRequest) {
   try {
+    // 認証チェック (管理者のみアクセス可能)
+    await requireAdmin(request);
+
     const body = await request.json();
     
     if (!body || typeof body !== 'object') {
@@ -77,7 +87,13 @@ export async function PUT(request: NextRequest) {
     });
     
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
+    }
+    if (error.message === 'Forbidden') {
+      return NextResponse.json({ error: 'この操作を実行する権限がありません' }, { status: 403 });
+    }
     console.error('Error updating settings:', error);
     return NextResponse.json(
       { error: '設定の更新に失敗しました' },

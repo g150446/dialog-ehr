@@ -63,12 +63,12 @@ function transformPatient(patient: any): Patient {
       visitType: mr.visitType || undefined,
       dayOfStay: mr.dayOfStay || undefined,
       progressNote: mr.progressNote || undefined,
-      vitalSigns: mr.vitalSigns as MedicalRecord['vitalSigns'] || undefined,
       laboratoryResults: mr.laboratoryResults as MedicalRecord['laboratoryResults'] || undefined,
       imagingResults: mr.imagingResults || undefined,
       medications: mr.medications as MedicalRecord['medications'] || undefined,
       physician: mr.physician || undefined,
       notes: mr.notes || undefined,
+      deletedAt: mr.deletedAt,
     })) || undefined,
     monitoringRecords: patient.monitoringRecords?.map((mr: any) => ({
       id: mr.recordId || mr.id,
@@ -126,7 +126,42 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(transformPatient(patient));
+    // Fetch deletion history for deleted medical records
+    const deletedRecordIds = patient.medicalRecords
+      .filter(mr => mr.deletedAt)
+      .map(mr => mr.id);
+
+    const deletionHistory = deletedRecordIds.length > 0
+      ? await prisma.recordHistory.findMany({
+          where: {
+            recordId: { in: deletedRecordIds },
+            action: 'delete',
+          },
+          select: {
+            recordId: true,
+            changedBy: true,
+            changedAt: true,
+          },
+        })
+      : [];
+
+    // Create a map of deletion info
+    const deletionInfoMap = new Map(
+      deletionHistory.map(h => [h.recordId, { deletedBy: h.changedBy, deletedAt: h.changedAt }])
+    );
+
+    // Transform patient and enrich with deletion info
+    const transformedPatient = transformPatient(patient);
+    if (transformedPatient.medicalRecords) {
+      transformedPatient.medicalRecords = transformedPatient.medicalRecords.map(mr => {
+        const deletionInfo = deletionInfoMap.get(
+          patient.medicalRecords.find(pmr => (pmr.recordId || pmr.id) === mr.id)?.id || ''
+        );
+        return deletionInfo ? { ...mr, deletedBy: deletionInfo.deletedBy } : mr;
+      });
+    }
+
+    return NextResponse.json(transformedPatient);
   } catch (error) {
     console.error('Error fetching patient:', error);
     return NextResponse.json(
@@ -194,6 +229,7 @@ export async function PUT(
       include: {
         visits: true,
         medicalRecords: true,
+        monitoringRecords: true,
       },
     });
 

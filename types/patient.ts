@@ -82,34 +82,33 @@ export interface MedicalRecord {
   type: '初診' | '再診' | '外来受診' | '入院診療録';
   visitType?: '外来' | '入院';
   dayOfStay?: number; // For inpatient records (e.g., 入院2日目)
-  
+
   // Progress note (unified SOAP format)
   progressNote?: string;
-  
+
+  // Author information
+  authorId?: string;
+  authorRole?: string;
+  authorName?: string;
+
   // Additional fields
-  vitalSigns?: {
-    temperature?: string;
-    bloodPressure?: string;
-    heartRate?: string;
-    spO2?: string;
-    oxygenFlow?: string;
-  };
-  
   laboratoryResults?: {
     [key: string]: string | number;
   };
-  
+
   imagingResults?: string;
-  
+
   medications?: {
     name: string;
     dosage: string;
     frequency: string;
     duration?: string;
   }[];
-  
+
   physician?: string;
   notes?: string;
+  deletedAt?: Date | string;
+  deletedBy?: string;
 }
 
 export interface MonitoringRecord {

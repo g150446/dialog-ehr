@@ -80,6 +80,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### 7. Login with Default Admin Account
+
+The system creates a default admin account during initial setup:
+
+- **Username:** `admin`
+- **Password:** `Admin123!`
+
+**IMPORTANT:** You should change the default password immediately after your first login for security reasons.
+
 **To stop the development server:**
 - If running in foreground: Press `Ctrl+C` in the terminal
 - If running in background: Find and kill the process:

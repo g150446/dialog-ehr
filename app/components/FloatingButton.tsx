@@ -770,7 +770,7 @@ export default function FloatingButton() {
                     {/* まだLLM解析をしていない or 再送したい場合 */}
                     {ollamaJsonRecognized === null && (
                       <button
-                        onClick={sendToOllama}
+                        onClick={() => sendToOllama()}
                         disabled={isSavingMonitoringRecord}
                         className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                       >

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { MedicalRecord } from '@/types/patient';
 import { saveRecordHistory, createRecordSnapshot } from '@/lib/record-history';
+import { requireAuth } from '@/lib/api-auth';
 
 // Helper function to transform Prisma medical record to MedicalRecord type
 function transformMedicalRecord(mr: any): MedicalRecord {
@@ -12,7 +13,9 @@ function transformMedicalRecord(mr: any): MedicalRecord {
     visitType: mr.visitType || undefined,
     dayOfStay: mr.dayOfStay || undefined,
     progressNote: mr.progressNote || undefined,
-    vitalSigns: mr.vitalSigns as MedicalRecord['vitalSigns'] || undefined,
+    authorId: mr.authorId || undefined,
+    authorRole: mr.authorRole || undefined,
+    authorName: mr.authorName || undefined,
     laboratoryResults: mr.laboratoryResults as MedicalRecord['laboratoryResults'] || undefined,
     imagingResults: mr.imagingResults || undefined,
     medications: mr.medications as MedicalRecord['medications'] || undefined,
@@ -26,6 +29,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string; recordId: string }> }
 ) {
   try {
+    // Get authenticated user information
+    const auth = await requireAuth(request);
+
+    // Get user details for changedBy field
+    const user = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { fullName: true, username: true, role: true },
+    });
+
     const { id, recordId } = await params;
     const body = await request.json();
     const recordData = body;
@@ -42,11 +54,14 @@ export async function PUT(
       );
     }
 
-    // Find medical record by recordId
+    // Find medical record by either database id OR recordId field
     const existingRecord = await prisma.medicalRecord.findFirst({
       where: {
         patientId: id,
-        recordId: recordId,
+        OR: [
+          { id: recordId }, // Database UUID
+          { recordId: recordId }, // Original recordId field
+        ],
         deletedAt: null, // 削除されていない記録のみ
       },
     });
@@ -72,7 +87,6 @@ export async function PUT(
         visitType: recordData.visitType !== undefined ? recordData.visitType : existingRecord.visitType,
         dayOfStay: recordData.dayOfStay !== undefined ? recordData.dayOfStay : existingRecord.dayOfStay,
         progressNote: recordData.progressNote !== undefined ? recordData.progressNote : existingRecord.progressNote,
-        vitalSigns: recordData.vitalSigns !== undefined ? recordData.vitalSigns : existingRecord.vitalSigns,
         laboratoryResults: recordData.laboratoryResults !== undefined ? recordData.laboratoryResults : existingRecord.laboratoryResults,
         imagingResults: recordData.imagingResults !== undefined ? recordData.imagingResults : existingRecord.imagingResults,
         medications: recordData.medications !== undefined ? recordData.medications : existingRecord.medications,
@@ -81,7 +95,7 @@ export async function PUT(
       },
     });
 
-    // Save update history
+    // Save update history with user context
     await saveRecordHistory({
       recordType: 'medical',
       recordId: updatedRecord.id,
@@ -89,6 +103,8 @@ export async function PUT(
       action: 'update',
       previousData: previousSnapshot,
       newData: createRecordSnapshot(updatedRecord, 'medical'),
+      changedBy: user?.fullName || user?.username || auth.userId,
+      reason: recordData.reason,
     });
 
     return NextResponse.json(transformMedicalRecord(updatedRecord), { status: 200 });
@@ -106,6 +122,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; recordId: string }> }
 ) {
   try {
+    // Get authenticated user information
+    const auth = await requireAuth(request);
+
+    // Get user details for changedBy field
+    const user = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { fullName: true, username: true, role: true },
+    });
+
     const { id, recordId } = await params;
 
     // Verify patient exists
@@ -120,11 +145,14 @@ export async function DELETE(
       );
     }
 
-    // Find medical record by recordId
+    // Find medical record by either database id OR recordId field
     const existingRecord = await prisma.medicalRecord.findFirst({
       where: {
         patientId: id,
-        recordId: recordId,
+        OR: [
+          { id: recordId }, // Database UUID
+          { recordId: recordId }, // Original recordId field
+        ],
         deletedAt: null, // 削除されていない記録のみ
       },
     });
@@ -149,7 +177,7 @@ export async function DELETE(
       },
     });
 
-    // Save delete history
+    // Save delete history with user context
     await saveRecordHistory({
       recordType: 'medical',
       recordId: deletedRecord.id,
@@ -157,6 +185,7 @@ export async function DELETE(
       action: 'delete',
       previousData: previousSnapshot,
       newData: createRecordSnapshot(deletedRecord, 'medical'),
+      changedBy: user?.fullName || user?.username || auth.userId,
     });
 
     return NextResponse.json({ success: true }, { status: 200 });

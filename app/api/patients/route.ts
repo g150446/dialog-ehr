@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { Patient, Visit, MedicalRecord } from '@/types/patient';
 import { Prisma } from '@prisma/client';
+import { requireAuth } from '@/lib/api-auth';
 
 // Helper function to transform Prisma patient to Patient type
 function transformPatient(patient: any): Patient {
@@ -64,18 +65,21 @@ function transformPatient(patient: any): Patient {
       visitType: mr.visitType || undefined,
       dayOfStay: mr.dayOfStay || undefined,
       progressNote: mr.progressNote || undefined,
-      vitalSigns: mr.vitalSigns as MedicalRecord['vitalSigns'] || undefined,
       laboratoryResults: mr.laboratoryResults as MedicalRecord['laboratoryResults'] || undefined,
       imagingResults: mr.imagingResults || undefined,
       medications: mr.medications as MedicalRecord['medications'] || undefined,
       physician: mr.physician || undefined,
       notes: mr.notes || undefined,
+      deletedAt: mr.deletedAt,
     })) || undefined,
   };
 }
 
 export async function GET(request: NextRequest) {
   try {
+    // 認証チェック
+    await requireAuth(request);
+
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('query');
 
@@ -134,7 +138,10 @@ export async function GET(request: NextRequest) {
     const transformedPatients = patients.map(transformPatient);
 
     return NextResponse.json(transformedPatients);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
+    }
     console.error('Error fetching patients:', error);
     return NextResponse.json(
       { error: 'Failed to fetch patients' },
@@ -145,6 +152,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // 認証チェック
+    await requireAuth(request);
+
     const body = await request.json();
     const patientData = body;
 
@@ -211,7 +221,6 @@ export async function POST(request: NextRequest) {
             visitType: mr.visitType,
             dayOfStay: mr.dayOfStay,
             progressNote: mr.progressNote,
-            vitalSigns: mr.vitalSigns,
             laboratoryResults: mr.laboratoryResults,
             imagingResults: mr.imagingResults,
             medications: mr.medications,
@@ -227,7 +236,10 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(transformPatient(patient), { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
+    }
     console.error('Error creating patient:', error);
     return NextResponse.json(
       { error: 'Failed to create patient' },

@@ -113,24 +113,30 @@ model MedicalRecord {
   
   // Progress note (unified SOAP format)
   progressNote      String?  @db.Text
-  
+
+  // Author information
+  authorId          String?  // User ID of the author
+  authorRole        String?  // Role of the author at time of writing
+  authorName        String?  // Full name of the author
+
   // Additional fields stored as JSON
-  vitalSigns        Json?    // { temperature?, bloodPressure?, heartRate?, spO2?, oxygenFlow? }
   laboratoryResults Json?    // { [key: string]: string | number }
   imagingResults    String?  @db.Text
-  
+
   medications       Json?    // { name: string, dosage: string, frequency: string, duration?: string }[]
-  
+
   physician         String?
   notes             String?  @db.Text
   
   patient           Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  
+
+  deletedAt         DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  
+
   @@index([patientId])
   @@index([date])
+  @@index([deletedAt])
   @@map("medical_records")
 }
 
@@ -160,13 +166,34 @@ model MonitoringRecord {
   other                 String?  @db.Text
   
   patient               Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  
+
+  deletedAt             DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-  
+
   @@index([patientId])
   @@index([date])
+  @@index([deletedAt])
   @@map("monitoring_records")
+}
+
+model RecordHistory {
+  id               String   @id @default(uuid())
+  recordType       String   // 'medical_record' or 'monitoring_record'
+  recordId         String   // Current UUID of the record
+  originalRecordId String   // Original recordId from JSON
+  action           String   // 'created', 'updated', 'deleted'
+  previousData     Json?
+  newData          Json?
+  changedBy        String?  // User ID
+  changedAt        DateTime @default(now())
+  reason           String?
+  createdAt        DateTime @default(now())
+
+  @@index([recordType, recordId])
+  @@index([originalRecordId])
+  @@index([changedAt])
+  @@map("record_history")
 }
 
 model AppSettings {
@@ -175,6 +202,76 @@ model AppSettings {
   value     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("app_settings")
+}
+
+model User {
+  id                    String    @id @default(uuid())
+  username              String    @unique
+  email                 String    @unique
+  passwordHash          String
+
+  // User Profile
+  fullName              String
+  role                  UserRole  @default(NURSE)
+  department            String?
+  licenseNumber         String?   // Medical license number
+
+  // Security & Status
+  isAdmin               Boolean   @default(false)  // Administrator permissions
+  isActive              Boolean   @default(true)
+  isLocked              Boolean   @default(false)
+  failedLoginAttempts   Int       @default(0)
+  lastLoginAt           DateTime?
+  lastLoginIp           String?
+
+  // Password Management
+  passwordResetToken    String?   @unique
+  passwordResetExpiry   DateTime?
+  mustChangePassword    Boolean   @default(true)  // Force password change on first login
+
+  // Audit
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  createdBy             String?
+
+  // Relations
+  auditLogs             AuditLog[]
+
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+enum UserRole {
+  DOCTOR             // Physician - full patient access
+  NURSE              // Nursing staff - patient care & monitoring
+  PHARMACIST         // Pharmacy staff - medication access
+  MEDICAL_CLERK      // Medical records clerk - data entry
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String?
+  username      String   // Store username for deleted users
+  action        String   // LOGIN, LOGOUT, CREATE_USER, UPDATE_USER, DELETE_USER, etc.
+  resourceType  String?  // USER, PATIENT, MEDICAL_RECORD, etc.
+  resourceId    String?
+  details       Json?    // Additional context
+  ipAddress     String?
+  userAgent     String?  @db.Text
+  success       Boolean  @default(true)
+  errorMessage  String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_logs")
 }
