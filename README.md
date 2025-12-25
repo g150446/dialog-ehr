@@ -17,6 +17,7 @@ An electronic health record (EHR) system built with Next.js, TypeScript, Tailwin
 
 - Node.js 18+ and npm/yarn/pnpm
 - Docker and Docker Compose (for PostgreSQL database)
+- mkcert (for HTTPS/SSL certificates - required for `npm run dev:https` or voice input)
 - Python 3.8+ (for Whisper transcription server, optional - only needed for voice input feature)
 
 ## Setup
@@ -60,7 +61,26 @@ npm run db:generate
 npm run db:migrate
 ```
 
-When prompted, name your migration (e.g., "init").
+**Important:**
+- When prompted, name your migration (e.g., "init")
+- If you see "Drift detected" or schema mismatch errors, run `npx prisma migrate reset` (⚠️ **WARNING: This deletes all data**) or `npx prisma migrate dev` to resolve it
+- After migrations complete, verify the schema is in sync (see Step 4.5 below)
+
+#### 4.5. Verify Database Schema (Recommended)
+
+Verify that the database schema matches the Prisma schema to prevent runtime errors:
+
+```bash
+npm run db:verify
+```
+
+This will check:
+- ✅ All migrations are applied
+- ✅ Critical tables exist
+- ✅ Critical columns exist (including `authorId`, `authorRole`, `authorName` in `medical_records`)
+- ✅ Prisma Client is generated correctly
+
+**If verification fails:** Run `npx prisma migrate dev` to sync the schema, then verify again.
 
 ### 5. Seed the Database
 
@@ -72,22 +92,108 @@ npm run db:seed
 
 This will migrate all patient data, visits, and medical records from the JSON file to PostgreSQL.
 
-### 6. Start the Development Server
+**Optional:** After seeding, create the default admin user:
 
+```bash
+npx tsx scripts/seed-admin.ts
+```
+
+Default admin credentials:
+- Username: `admin`
+- Password: `Admin123!`
+- ⚠️ **Important:** Change the password after first login!
+
+### 6. Generate SSL Certificates (Required for HTTPS)
+
+SSL certificates are required if you want to:
+- Run the development server with HTTPS (`npm run dev:https`)
+- Access the app via Tailscale or remote hostname
+- Use the voice input feature from non-localhost addresses
+
+**Steps:**
+
+1. **Check if mkcert is installed**:
+   ```bash
+   which mkcert
+   ```
+
+   If not installed, install mkcert:
+   ```bash
+   # macOS
+   brew install mkcert
+
+   # Linux
+   sudo apt install libnss3-tools
+   wget -qO - https://dl.filippo.io/mkcert/install | sudo bash
+
+   # Windows
+   choco install mkcert
+   ```
+
+2. **Install the local CA**:
+   ```bash
+   mkcert -install
+   ```
+
+3. **Get your machine's hostname** (needed for remote access):
+   ```bash
+   hostname
+   ```
+
+   Example output: `hirotonoMacBook-Air.local` or `macbook-m1`
+
+4. **Generate SSL certificates** (replace `YOUR-HOSTNAME` with your actual hostname from step 3):
+   ```bash
+   mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ::1 YOUR-HOSTNAME
+   ```
+
+   Example:
+   ```bash
+   mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ::1 hirotonoMacBook-Air hirotonoMacBook-Air.local
+   ```
+
+5. **Verify certificate files were created**:
+   ```bash
+   ls -lh localhost*.pem
+   ```
+
+   You should see:
+   - `localhost-key.pem` (private key)
+   - `localhost.pem` (certificate)
+
+**Note:** The certificate files are already excluded from git via `.gitignore`. They will expire in 3 years and you'll need to regenerate them.
+
+**⚠️ Important:** If you skip this step and try to run `npm run dev:https`, you will get an error:
+```
+Error: ENOENT: no such file or directory, open 'localhost-key.pem'
+```
+
+**Skip this step only if:** You only need local HTTP access (`npm run dev`) and don't need voice input or remote access. If you plan to use HTTPS mode, you **must** complete this step first.
+
+### 7. Start the Development Server
+
+**Option A: HTTP (for local development only)**
 ```bash
 npm run dev
 ```
-
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 7. Login with Default Admin Account
+**Option B: HTTPS (for remote access or voice input)**
+```bash
+npm run dev:https
+```
+Access via:
+- `https://localhost:3000` (local access)
+- `https://YOUR-HOSTNAME:3000` (remote/Tailscale access)
 
-The system creates a default admin account during initial setup:
+**⚠️ IMPORTANT:** Running `npm run dev:https` **requires SSL certificates from Step 6**. 
 
-- **Username:** `admin`
-- **Password:** `Admin123!`
+**If you see this error:**
+```
+Error: ENOENT: no such file or directory, open 'localhost-key.pem'
+```
 
-**IMPORTANT:** You should change the default password immediately after your first login for security reasons.
+**This means:** You skipped Step 6 (Generate SSL Certificates) or the certificate files don't exist. You **must** complete Step 6 before running `npm run dev:https`. See the [Troubleshooting section](#error-enoent-no-such-file-or-directory-open-localhost-keypem) below for detailed fix instructions.
 
 **To stop the development server:**
 - If running in foreground: Press `Ctrl+C` in the terminal
@@ -102,53 +208,7 @@ The system creates a default admin account during initial setup:
   kill -9 <PID>
   ```
 
-#### HTTPS Setup for Voice Input (Optional)
-
-If you need to access the application via a hostname other than `localhost` (e.g., via Tailscale VPN), you'll need to enable HTTPS for the MediaRecorder API to work. Browsers require HTTPS for MediaRecorder API when accessing via non-localhost hostnames.
-
-**Quick Setup:**
-
-1. **Install mkcert** (if not already installed):
-   ```bash
-   # macOS
-   brew install mkcert
-   
-   # Linux
-   sudo apt install libnss3-tools
-   wget -qO - https://dl.filippo.io/mkcert/install | sudo bash
-   
-   # Windows
-   choco install mkcert
-   ```
-
-2. **Install the local CA**:
-   ```bash
-   mkcert -install
-   ```
-
-3. **Generate SSL certificates** (replace `macbook-m1` with your actual hostname):
-   ```bash
-   mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ::1 macbook-m1
-   ```
-
-4. **Run the dev server with HTTPS**:
-   ```bash
-   npm run dev:https
-   ```
-
-5. **Access via HTTPS**:
-   - `https://localhost:3000` (works)
-   - `https://macbook-m1:3000` (works via Tailscale)
-
-**Note:** The certificate files (`localhost.pem` and `localhost-key.pem`) are already excluded from git via `.gitignore`.
-
-**Alternative:** If you don't want to set up HTTPS, you can use SSH port forwarding:
-```bash
-ssh -L 3000:localhost:3000 user@macbook-m1
-```
-Then access via `http://localhost:3000` from your remote machine.
-
-### 7. Start Whisper Transcription Server (Optional - for Voice Input)
+### 8. Start Whisper Transcription Server (Optional - for Voice Input)
 
 The voice input feature requires a Whisper transcription server running separately. This is a Python FastAPI server that handles audio transcription.
 
@@ -176,6 +236,181 @@ The voice input feature requires a Whisper transcription server running separate
 - If you're running Next.js with HTTP (`npm run dev`), the Whisper server can use HTTP.
 
 **Note:** The Whisper server must be running for the voice input feature to work. The server uses the `small` model by default, which provides a good balance between accuracy and speed. You can modify the model size in `whisper_server.py` if needed.
+
+### Setup Verification Checklist
+
+After completing the setup, verify everything is working:
+
+```bash
+# 1. Verify database schema is in sync
+npm run db:verify
+
+# 2. Check that patients were seeded
+npm run db:check
+
+# 3. Start the development server
+npm run dev
+# or
+npm run dev:https
+```
+
+**Expected results:**
+- ✅ Schema verification passes (all tables and columns exist)
+- ✅ Patient count shows 3 patients
+- ✅ Development server starts without errors
+- ✅ Patient list page loads without errors
+
+If any step fails, see the [Troubleshooting](#troubleshooting) section below.
+
+## Troubleshooting
+
+### Error: ENOENT: no such file or directory, open 'localhost-key.pem'
+
+**Problem:** You tried to run `npm run dev:https` but the SSL certificate files don't exist.
+
+**Error message you'll see:**
+```
+⚠ Self-signed certificates are currently an experimental feature, use with caution.
+Unhandled Rejection: Error: ENOENT: no such file or directory, open '/path/to/dialog-ehr/localhost-key.pem'
+```
+
+**Why this happens:**
+- You skipped Step 6 (Generate SSL Certificates) in the setup process
+- The certificate files (`localhost-key.pem` and `localhost.pem`) were deleted or never created
+- You're trying to run HTTPS mode without the required SSL certificates
+
+**Solution:** Complete Step 6 (Generate SSL Certificates) before running the HTTPS dev server:
+
+```bash
+# 1. Check if mkcert is installed
+which mkcert
+
+# 2. Install mkcert if needed (macOS)
+brew install mkcert
+
+# 3. Install the local CA (if not already installed)
+mkcert -install
+
+# 4. Get your machine's hostname
+hostname
+# Example output: hirotonoMacBook-Air.local
+
+# 5. Generate SSL certificates (replace YOUR-HOSTNAME with your actual hostname from step 4)
+mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ::1 YOUR-HOSTNAME
+
+# Example with actual hostname:
+# mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ::1 hirotonoMacBook-Air.local
+
+# 6. Verify certificate files were created
+ls -lh localhost*.pem
+# You should see:
+# - localhost-key.pem (private key)
+# - localhost.pem (certificate)
+
+# 7. Now you can run HTTPS server
+npm run dev:https
+```
+
+**Alternative:** If you don't need HTTPS, use HTTP mode instead:
+```bash
+npm run dev
+```
+
+**Note:** The certificate files are excluded from git (via `.gitignore`), so each developer needs to generate them in their own environment. Certificates expire in 3 years and will need to be regenerated.
+
+### Error: The column `medical_records.authorId` does not exist in the current database
+
+**Problem:** The database schema is out of sync with the Prisma schema. This happens when:
+- The Prisma schema was updated but migrations weren't run
+- Migrations were applied in a different order than expected
+- The database was manually modified
+
+**Error message you'll see:**
+```
+Invalid `prisma.patient.findMany()` invocation
+The column `medical_records.authorId` does not exist in the current database.
+```
+
+**Why this happens:**
+- The Prisma schema defines fields (like `authorId`, `authorRole`, `authorName` in `MedicalRecord`) that don't exist in the actual database
+- Prisma Client was generated with the schema, but the database wasn't updated to match
+
+**Solution:** Run database migrations to sync the schema:
+
+```bash
+# 1. Verify what's wrong (optional but recommended)
+npm run db:verify
+
+# 2. Check migration status
+npx prisma migrate status
+
+# 3. If migrations are pending or schema is out of sync, run migrations
+npx prisma migrate dev
+
+# 4. Regenerate Prisma Client (usually done automatically, but can run manually)
+npx prisma generate
+
+# 5. Verify the schema is now correct
+npm run db:verify
+
+# 6. Restart your development server
+npm run dev
+# or
+npm run dev:https
+```
+
+**Prevention:** Always run `npm run db:verify` after setup or after pulling new migrations to catch schema mismatches early.
+
+**If migrations fail or you're in a development environment**, you can reset the database (⚠️ **WARNING: This deletes all data**):
+
+```bash
+# Reset database and reapply all migrations
+npx prisma migrate reset
+
+# Then reseed the database
+npm run db:seed
+```
+
+**Prevention:** Always run `npx prisma migrate dev` after updating the Prisma schema to ensure the database stays in sync.
+
+### Database Connection Error: Authentication failed
+
+**Problem:** Cannot connect to PostgreSQL database.
+
+**Solution:**
+
+1. Make sure PostgreSQL container is running:
+   ```bash
+   npm run db:up
+   ```
+
+2. Check your `.env` file has the correct credentials:
+   ```env
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/dialog_ehr?schema=public"
+   POSTGRES_PASSWORD=postgres
+   ```
+
+3. Restart the PostgreSQL container:
+   ```bash
+   npm run db:down
+   npm run db:up
+   ```
+
+### Voice Input Not Working
+
+**Problem:** Voice recording button doesn't work or shows errors.
+
+**Solutions:**
+
+1. **If accessing via non-localhost hostname:** You need HTTPS. Complete Step 6 and run `npm run dev:https`.
+
+2. **Whisper server not running:** Start the Whisper transcription server:
+   ```bash
+   pip install -r requirements.txt
+   python whisper_server.py
+   ```
+
+3. **Browser doesn't support MediaRecorder API:** Use a modern browser (Chrome, Edge, Firefox, Safari).
 
 ## Security Best Practices
 
@@ -350,6 +585,8 @@ The Next.js API routes provide the following endpoints:
 - `npm run db:migrate` - Run database migrations
 - `npm run db:generate` - Generate Prisma Client
 - `npm run db:seed` - Import data from db.json
+- `npm run db:verify` - Verify database schema is in sync (prevents runtime errors)
+- `npm run db:check` - Check if patient data exists in database
 - `npm run db:studio` - Open Prisma Studio GUI
 
 ### Development Workflow

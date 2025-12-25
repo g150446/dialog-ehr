@@ -162,7 +162,6 @@ async function migrateData() {
                 visitType: record.visitType,
                 dayOfStay: record.dayOfStay,
                 progressNote: record.progressNote,
-                vitalSigns: record.vitalSigns,
                 laboratoryResults: record.laboratoryResults,
                 imagingResults: record.imagingResults,
                 medications: record.medications,
