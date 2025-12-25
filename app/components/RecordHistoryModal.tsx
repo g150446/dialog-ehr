@@ -123,6 +123,23 @@ export default function RecordHistoryModal({
     return String(value);
   };
 
+  const getRecordContent = (data: any, recordType: 'medical' | 'monitoring') => {
+    if (!data) return null;
+
+    if (recordType === 'medical') {
+      return data.progressNote || null;
+    } else {
+      // For monitoring records, you might want to show different fields
+      return data.notes || data.data || null;
+    }
+  };
+
+  const hasContentChanged = (previousData: any, newData: any, recordType: 'medical' | 'monitoring') => {
+    const oldContent = getRecordContent(previousData, recordType);
+    const newContent = getRecordContent(newData, recordType);
+    return oldContent !== newContent;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -161,7 +178,10 @@ export default function RecordHistoryModal({
           {!loading && !error && history.length > 0 && (
             <div className="space-y-4">
               {history.map((item) => {
-                const changes = getFieldChanges(item.previousData, item.newData);
+                const allChanges = getFieldChanges(item.previousData, item.newData);
+                // Filter out content fields that are displayed prominently above
+                const contentFieldsToExclude = ['progressNote', 'notes', 'data'];
+                const changes = allChanges.filter(change => !contentFieldsToExclude.includes(change.field));
                 return (
                   <div key={item.id} className="border border-gray-300 rounded-lg p-4">
                     {/* Header */}
@@ -176,6 +196,62 @@ export default function RecordHistoryModal({
                         <span className="text-xs text-gray-500">変更者: {item.changedBy}</span>
                       )}
                     </div>
+
+                    {/* Content Display - Show for all actions */}
+                    {(() => {
+                      const previousContent = getRecordContent(item.previousData, recordType);
+                      const newContent = getRecordContent(item.newData, recordType);
+                      const contentChanged = hasContentChanged(item.previousData, item.newData, recordType);
+
+                      // For CREATE action - show the created content
+                      if (item.action === 'create' && newContent) {
+                        return (
+                          <div className="mt-3 mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="text-sm font-bold text-green-900 mb-2">作成された内容:</div>
+                            <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">
+                              {newContent}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // For UPDATE action - show old and new content if changed
+                      if (item.action === 'update' && contentChanged) {
+                        return (
+                          <div className="mt-3 mb-4">
+                            <div className="text-sm font-bold text-gray-700 mb-2">内容の変更:</div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <div className="text-xs font-bold text-red-900 mb-2">変更前:</div>
+                                <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">
+                                  {previousContent || '(なし)'}
+                                </div>
+                              </div>
+                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="text-xs font-bold text-green-900 mb-2">変更後:</div>
+                                <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">
+                                  {newContent || '(なし)'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // For DELETE action - show the deleted content
+                      if (item.action === 'delete' && previousContent) {
+                        return (
+                          <div className="mt-3 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="text-sm font-bold text-red-900 mb-2">削除された内容:</div>
+                            <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">
+                              {previousContent}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })()}
 
                     {/* Changes */}
                     {changes.length > 0 && (
