@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { Patient, Visit, MedicalRecord } from '@/types/patient';
-import { Prisma } from '@prisma/client';
 import { requireAuth } from '@/lib/api-auth';
 
 // Helper function to transform Prisma patient to Patient type
@@ -110,11 +109,11 @@ export async function GET(request: NextRequest) {
 
       whereClause = {
         OR: [
-          { patientCode: { contains: searchQuery, mode: Prisma.QueryMode.insensitive } },
-          { nameKana: { contains: searchQuery, mode: Prisma.QueryMode.insensitive } },
-          { name: { contains: searchQuery, mode: Prisma.QueryMode.insensitive } },
-          { dateOfBirth: { contains: dateToSearch, mode: Prisma.QueryMode.insensitive } },
-          { department: { contains: searchQuery, mode: Prisma.QueryMode.insensitive } },
+          { patientCode: { contains: searchQuery, mode: 'insensitive' } },
+          { nameKana: { contains: searchQuery, mode: 'insensitive' } },
+          { name: { contains: searchQuery, mode: 'insensitive' } },
+          { dateOfBirth: { contains: dateToSearch, mode: 'insensitive' } },
+          { department: { contains: searchQuery, mode: 'insensitive' } },
         ],
       };
     }
@@ -247,4 +246,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

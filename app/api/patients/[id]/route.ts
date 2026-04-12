@@ -128,8 +128,8 @@ export async function GET(
 
     // Fetch deletion history for deleted medical records
     const deletedRecordIds = patient.medicalRecords
-      .filter(mr => mr.deletedAt)
-      .map(mr => mr.id);
+      .filter((mr: any) => mr.deletedAt)
+      .map((mr: any) => mr.id);
 
     const deletionHistory = deletedRecordIds.length > 0
       ? await prisma.recordHistory.findMany({
@@ -147,15 +147,15 @@ export async function GET(
 
     // Create a map of deletion info
     const deletionInfoMap = new Map(
-      deletionHistory.map(h => [h.recordId, { deletedBy: h.changedBy, deletedAt: h.changedAt }])
+      deletionHistory.map((h: any) => [h.recordId, { deletedBy: h.changedBy, deletedAt: h.changedAt }])
     );
 
     // Transform patient and enrich with deletion info
     const transformedPatient = transformPatient(patient);
     if (transformedPatient.medicalRecords) {
-      transformedPatient.medicalRecords = transformedPatient.medicalRecords.map(mr => {
+      transformedPatient.medicalRecords = transformedPatient.medicalRecords.map((mr) => {
         const deletionInfo = deletionInfoMap.get(
-          patient.medicalRecords.find(pmr => (pmr.recordId || pmr.id) === mr.id)?.id || ''
+          patient.medicalRecords.find((pmr: any) => (pmr.recordId || pmr.id) === mr.id)?.id || ''
         );
         return deletionInfo ? { ...mr, deletedBy: deletionInfo.deletedBy } : mr;
       });
@@ -262,4 +262,3 @@ export async function DELETE(
     );
   }
 }
-

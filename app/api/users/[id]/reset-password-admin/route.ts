@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { requireRole } from '@/lib/api-auth';
+import { requireAdmin } from '@/lib/api-auth';
 import { validatePassword } from '@/lib/password-validator';
 import bcrypt from 'bcryptjs';
 
@@ -10,8 +10,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // ADMIN のみアクセス可能
-    const auth = await requireRole(request, ['ADMIN']);
+    const auth = await requireAdmin(request);
     const { id } = await context.params;
 
     const body = await request.json();
