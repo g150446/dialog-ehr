@@ -360,41 +360,130 @@
       "address": "東京都港区7-8-9",
       "bloodType": "O型",
       "allergies": ["ラテックス"],
-      "conditions": ["臍ヘルニア"],
+      "conditions": ["気管支喘息"],
       "height": 175,
       "weight": 80,
       "bmi": 26.1,
+      "chiefComplaint": "呼吸困難、咳嗽",
+      "smokingHistory": "喫煙歴なし",
+      "drinkingHistory": "機会飲酒",
+      "specialNotes": "気管支喘息（小児期発症、35歳頃再発）、アレルギー性鼻炎。ハウスダスト・ダニアレルギー。",
+      "summary": "",
       "department": "5111",
       "bed": "01",
       "admissionDate": "2021/08/11",
-      "dischargeDate": "2021/08/17",
-      "admissionDiagnosis": "臍ヘルニア嵌",
-      "dpcDiagnosis": "臍ヘルニア嵌",
+      "admissionDiagnosis": "気管支喘息",
+      "dpcDiagnosis": "気管支喘息急性増悪",
       "dpcPeriod": "08/13",
       "wardAttendingPhysician": "中村 医師",
       "resident": "小林 医師",
       "attendingPhysicianA": "加藤 医師",
-      "status": "退院済",
-      "plan": true,
-      "path": true,
+      "status": "入院中",
+      "plan": false,
+      "path": false,
       "visits": [
         {
           "id": "v5",
           "date": "2021-08-11",
-          "department": "外科",
+          "department": "呼吸器内科",
           "type": "入院",
-          "diagnosis": "臍ヘルニア嵌頓",
+          "diagnosis": "気管支喘息急性増悪",
           "physician": "中村 医師",
-          "notes": "緊急入院。嵌頓ヘルニアのため緊急手術。"
+          "notes": "緊急入院。呼吸困難、咳嗽のため。"
         },
         {
           "id": "v6",
-          "date": "2021-08-13",
-          "department": "外科",
+          "date": "2021-08-12",
+          "department": "呼吸器内科",
           "type": "入院",
-          "diagnosis": "臍ヘルニア嵌頓",
+          "diagnosis": "気管支喘息急性増悪（改善傾向）",
           "physician": "中村 医師",
-          "notes": "手術後経過良好。退院予定。"
+          "notes": "入院2日目。症状改善傾向。"
+        },
+        {
+          "id": "v7",
+          "date": "2021-08-13",
+          "department": "呼吸器内科",
+          "type": "入院",
+          "diagnosis": "気管支喘息急性増悪（軽快・退院）",
+          "physician": "中村 医師",
+          "notes": "入院3日目。症状軽快。退院予定。"
+        }
+      ],
+      "medicalRecords": [
+        {
+          "id": "mr13",
+          "date": "2021-08-11",
+          "type": "入院診療録",
+          "visitType": "入院",
+          "dayOfStay": 1,
+          "progressNote": "[S]\n2日前から感冒症状（咽頭痛、鼻汁）あり。昨晩から咳嗽がひどくなり、今朝から「ゼーゼー」と音がして息が吸えなくなった。手持ちの吸入薬を2回使ったが改善しないため、救急外来を受診。\n\n性別： 男性\n既往歴： 気管支喘息（小児期発症、35歳頃再発）、アレルギー性鼻炎\nアレルギー： ハウスダスト、ダニ\n生活歴： 喫煙歴なし、機会飲酒。会社員（事務職）。\n常用薬： ブデソニド・ホルモテロール配合吸入剤（シムビコートタービュヘイラー）1回2吸入 1日2回（※アドヒアランス不良、症状出現時のみ使用）\n\n[O]\nVitals: BT 37.1℃, BP 145/90 mmHg, HR 112 bpm, RR 28 /min, SpO2 88% (Room Air) → 94% (O2 2L/min 経鼻カヌラ)\n身体所見: 陥没呼吸あり。聴診にて両肺野に著明な呼気性・吸気性wheezeを聴取。発語は短い単語のみ（起座呼吸）。\n血液検査: WBC 9,500 /μL (Eos 8.5%), CRP 0.4 mg/dL.\n動脈血ガス (Room Air): pH 7.45, pCO2 32 Torr, pO2 55 Torr, HCO3- 22 mEq/L\n胸部X線: 肺野の過膨張を認めるが、明らかな浸潤影や気胸はなし。\n\n[A]\n# 気管支喘息 急性増悪（大発作）\n上気道炎を契機とした喘息発作。背景にコントローラー（ICS/LABA）の吸入アドヒアランス不良あり。著明な低酸素血症を伴っており、直ちに入院の上、全身性ステロイド投与および酸素療法が必要。\n\n[P]\n入院管理（病棟にて安静）\nO2 2L/min 経鼻カヌラで開始（目標SpO2 > 93%）\nソル・コーテフ（ヒドロコルチゾン）200mg + 生食100mL 静注（stat）、以降 100mgを8時間ごと静注\nメプチン吸入液0.3mL + 生理食塩水2mL ネブライザー吸入（stat）、以降 6時間ごと\n頻回に呼吸状態・SpO2をモニタリング",
+          "vitalSigns": {
+            "temperature": "37.1℃",
+            "bloodPressure": "145/90",
+            "heartRate": "112",
+            "spO2": "88%(RA) → 94%(O2 2L)"
+          },
+          "physician": "中村 医師"
+        },
+        {
+          "id": "mr14",
+          "date": "2021-08-12",
+          "type": "入院診療録",
+          "visitType": "入院",
+          "dayOfStay": 2,
+          "progressNote": "[S]\n「昨晩はゼーゼーせずにぐっすり眠れました。息苦しさはだいぶ楽になりました。」\n\n[O]\nVitals: BT 36.6℃, BP 122/78 mmHg, HR 82 bpm, RR 16 /min, SpO2 97% (O2 1L/min) → 酸素オフにて Room Airで 96%維持\n\n身体所見: 陥没呼吸なし。会話もスムーズ。聴診にて、強制呼気終末にのみわずかなwheezeを聴取するが、著明に改善。\n\n[A]\n# 気管支喘息 急性増悪（改善傾向）\nステロイド静注と気管支拡張薬吸入が著効。Room Airでの酸素化も良好に維持できている。点滴は本日で終了とし、ステロイドは内服へ切り替え（IV to PO）可能と判断。\n\n[P]\n酸素投与終了（Room Air管理へ）\nソル・コーテフ静注は朝の分で終了。昼よりプレドニン内服へ切り替え。\nプレドニン錠(5mg) 6錠（30mg）分2 朝・夕食後\nネブライザー吸入は定時指示を中止し、呼吸苦時のみの頓用（PRN）へ変更。\n持参薬のシムビコート吸入（1回2吸入 1日2回）を再開。病棟薬剤師より服薬指導を依頼。明日退院予定とする。",
+          "vitalSigns": {
+            "temperature": "36.6℃",
+            "bloodPressure": "122/78",
+            "heartRate": "82",
+            "spO2": "97%(O2 1L) → 96%(RA)"
+          },
+          "medications": [
+            {
+              "name": "プレドニン錠(5mg)",
+              "dosage": "6錠（30mg）",
+              "frequency": "分2 朝・夕食後"
+            },
+            {
+              "name": "シムビコートタービュヘイラー",
+              "dosage": "1回2吸入",
+              "frequency": "1日2回"
+            }
+          ],
+          "physician": "中村 医師"
+        },
+        {
+          "id": "mr15",
+          "date": "2021-08-13",
+          "type": "入院診療録",
+          "visitType": "入院",
+          "dayOfStay": 3,
+          "progressNote": "[S]\n「もう全く息苦しくないです。階段を少し歩いても平気でした。吸入薬は毎日サボらずやらないとダメですね、気をつけます。」\n\n[O]\nVitals: BT 36.5℃, BP 118/72 mmHg, HR 76 bpm, RR 14 /min, SpO2 98% (Room Air)\n身体所見: 呼吸音は清明（Clear to auscultation）。強制呼気時も含め wheeze完全に消失。\n\n[A]\n# 気管支喘息 急性増悪（軽快・退院）\n自覚症状・他覚所見ともに完全に消失。病棟薬剤師による吸入手技の確認も問題なく、コントローラー継続の重要性に対する患者の理解も得られた。本日退院とし、プレドニンは漸減スケジュールで処方。\n\n[P]\n本日午前退院。\n退院時処方：\nプレドニン錠(5mg) 6錠（30mg）分2 朝夕食後 × 3日分\nプレドニン錠(5mg) 3錠（15mg）分1 朝食後 × 3日分\nシムビコートタービュヘイラー 1回2吸入 1日2回（継続）\n次回外来：1週間後に一般内科外来を予約。",
+          "vitalSigns": {
+            "temperature": "36.5℃",
+            "bloodPressure": "118/72",
+            "heartRate": "76",
+            "spO2": "98%(RA)"
+          },
+          "medications": [
+            {
+              "name": "プレドニン錠(5mg)",
+              "dosage": "6錠（30mg）",
+              "frequency": "分2 朝夕食後 × 3日分"
+            },
+            {
+              "name": "プレドニン錠(5mg)",
+              "dosage": "3錠（15mg）",
+              "frequency": "分1 朝食後 × 3日分"
+            },
+            {
+              "name": "シムビコートタービュヘイラー",
+              "dosage": "1回2吸入",
+              "frequency": "1日2回（継続）"
+            }
+          ],
+          "physician": "中村 医師"
         }
       ]
     }
