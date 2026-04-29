@@ -38,6 +38,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingRecordForModal, setEditingRecordForModal] = useState<MedicalRecord | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const pastRecordsContainerRef = useRef<HTMLDivElement>(null);
 
   // Form state for new medical record
   const [newRecord, setNewRecord] = useState({
@@ -297,6 +298,22 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
       };
     }
   }, [openMenuRecordId, openMedicalRecordMenuId]);
+
+  // 過去診療録表示時に最新診療録までスクロール
+  useEffect(() => {
+    if (showPastRecordsOnly && pastRecordsContainerRef.current) {
+      const sortedRecords = [...patient.medicalRecords].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      const latestRecord = sortedRecords[sortedRecords.length - 1];
+      if (latestRecord) {
+        const element = document.getElementById(`record-${latestRecord.id}`);
+        if (element) {
+          element.scrollIntoView({ block: 'start', behavior: 'instant' });
+        }
+      }
+    }
+  }, [showPastRecordsOnly, patient.medicalRecords]);
 
   // Handle ESC key to cancel edit
   useEffect(() => {
@@ -1212,7 +1229,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                           <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去診療録</h3>
                           <div className="space-y-5 max-h-[calc(100vh-400px)] overflow-y-auto">
                             {patient.medicalRecords
-                              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                               .map((record) => {
                       const recordDate = new Date(record.date);
                       const dateStr = recordDate.toLocaleDateString('ja-JP', {
@@ -1425,9 +1442,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-5 flex-1 overflow-y-auto min-h-0 p-3 md:pt-6 md:px-6 md:pb-0">
+                        <div ref={pastRecordsContainerRef} className="space-y-5 flex-1 overflow-y-auto min-h-0 p-3 md:pt-6 md:px-6 md:pb-0">
                           {patient.medicalRecords
-                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                             .map((record) => {
                               const recordDate = new Date(record.date);
                               const dateStr = recordDate.toLocaleDateString('ja-JP', {
@@ -1448,7 +1465,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                               if (isDeleted) {
                                 // Simplified display for deleted records
                                 return (
-                                  <div key={record.id} className="bg-red-50 border-2 border-red-300 rounded-lg p-3 md:p-4">
+                          <div key={record.id} id={`record-${record.id}`} className="bg-red-50 border-2 border-red-300 rounded-lg p-3 md:p-4">
                                     <div className="flex items-center justify-between gap-3">
                                       <div className="flex items-center gap-3">
                                         <span className="font-bold text-red-700">{dateStr}</span>
@@ -1473,7 +1490,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                               }
 
                               return (
-                                <div key={record.id} className="bg-white rounded-lg border-2 border-gray-300 shadow-sm p-3 md:p-5">
+                                <div key={record.id} id={`record-${record.id}`} className="bg-white rounded-lg border-2 border-gray-300 shadow-sm p-3 md:p-5">
                                   {/* Record Header */}
                                   <div className="mb-3 md:mb-4 pb-2 md:pb-3 border-b-2 border-gray-400">
                                     <div className="flex items-center justify-between gap-3">

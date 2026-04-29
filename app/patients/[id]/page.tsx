@@ -119,7 +119,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
         },
         medicalRecords: {
           orderBy: {
-            date: 'desc',
+            date: 'asc',
           },
         },
         monitoringRecords: {

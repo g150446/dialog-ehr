@@ -108,7 +108,7 @@ export async function GET(
         },
         medicalRecords: {
           orderBy: {
-            date: 'desc',
+            date: 'asc',
           },
         },
         monitoringRecords: {
