@@ -1,6 +1,6 @@
 import { prisma } from './db';
 
-export type RecordType = 'medical' | 'monitoring';
+export type RecordType = 'medical' | 'monitoring' | 'referral' | 'summary';
 export type RecordAction = 'create' | 'update' | 'delete';
 
 interface SaveHistoryParams {
@@ -96,6 +96,34 @@ export function createRecordSnapshot(record: any, recordType: RecordType): any {
       urinationCount: record.urinationCount,
       drainOutput: record.drainOutput,
       other: record.other,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      deletedAt: record.deletedAt,
+    };
+  } else if (recordType === 'referral') {
+    return {
+      id: record.id,
+      recordId: record.recordId,
+      patientId: record.patientId,
+      destinationHospital: record.destinationHospital,
+      content: record.content,
+      authorId: record.authorId,
+      authorRole: record.authorRole,
+      authorName: record.authorName,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      deletedAt: record.deletedAt,
+    };
+  } else if (recordType === 'summary') {
+    return {
+      id: record.id,
+      recordId: record.recordId,
+      patientId: record.patientId,
+      title: record.title,
+      content: record.content,
+      authorId: record.authorId,
+      authorRole: record.authorRole,
+      authorName: record.authorName,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       deletedAt: record.deletedAt,

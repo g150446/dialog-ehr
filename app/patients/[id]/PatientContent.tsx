@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Patient, MedicalRecord, MonitoringRecord } from '@/types/patient';
+import { Patient, MedicalRecord, MonitoringRecord, ReferralLetter, PatientSummary } from '@/types/patient';
 import VitalSignsChart from '@/app/components/VitalSignsChart';
 import EditMedicalRecordModal from '@/app/components/EditMedicalRecordModal';
 import RecordHistoryModal from '@/app/components/RecordHistoryModal';
@@ -18,7 +18,7 @@ interface PatientContentProps {
 }
 
 export default function PatientContent({ patient, age, bmi }: PatientContentProps) {
-  const [activeView, setActiveView] = useState<'medical-records' | 'patient-info' | 'visit-history' | 'summary'>('medical-records');
+  const [activeView, setActiveView] = useState<'medical-records' | 'patient-info' | 'visit-history' | 'summary' | 'referral-letters'>('medical-records');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [shouldUseTwoColumns, setShouldUseTwoColumns] = useState(false);
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
@@ -91,8 +91,25 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
 
   const [newMonitoringDateTime, setNewMonitoringDateTime] = useState(getCurrentDateTime());
 
-  // State for summary input (questions/updates)
-  const [summaryInput, setSummaryInput] = useState('');
+  // State for patient summaries
+  const [patientSummaries, setPatientSummaries] = useState<PatientSummary[]>([]);
+  const [isLoadingPatientSummaries, setIsLoadingPatientSummaries] = useState(false);
+  const [isSavingPatientSummary, setIsSavingPatientSummary] = useState(false);
+  const [editingPatientSummaryId, setEditingPatientSummaryId] = useState<string | null>(null);
+  const [summaryForm, setSummaryForm] = useState({
+    title: '',
+    content: ''
+  });
+
+  // State for referral letters
+  const [referralLetters, setReferralLetters] = useState<ReferralLetter[]>([]);
+  const [isLoadingReferralLetters, setIsLoadingReferralLetters] = useState(false);
+  const [isSavingReferralLetter, setIsSavingReferralLetter] = useState(false);
+  const [editingReferralLetterId, setEditingReferralLetterId] = useState<string | null>(null);
+  const [referralLetterForm, setReferralLetterForm] = useState({
+    destinationHospital: '',
+    content: ''
+  });
 
   // Helper function to check if patient is inpatient
   const isInpatient = (patient: Patient): boolean => {
@@ -302,7 +319,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
   // 過去診療録表示時に最新診療録までスクロール
   useEffect(() => {
     if (showPastRecordsOnly && pastRecordsContainerRef.current) {
-      const sortedRecords = [...patient.medicalRecords].sort(
+      const sortedRecords = [...(patient.medicalRecords || [])].sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
       );
       const latestRecord = sortedRecords[sortedRecords.length - 1];
@@ -603,9 +620,9 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     URL.revokeObjectURL(url);
   };
 
-  // Export summary to JSON file
+  // Export summaries to JSON file
   const handleExportSummary = () => {
-    if (!patient.summary) {
+    if (!patientSummaries || patientSummaries.length === 0) {
       return;
     }
 
@@ -614,7 +631,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
       patientId: patient.id,
       patientCode: patient.patientCode,
       patientName: patient.name,
-      summary: patient.summary,
+      summaries: patientSummaries,
       exportedAt: new Date().toISOString()
     };
 
@@ -629,13 +646,207 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
     
     // Use patient name for filename (sanitize for filesystem - preserve Japanese characters)
     // Replace spaces with underscores, remove only problematic filesystem characters
-    const sanitizedName = patient.name.replace(/\s+/g, '_').replace(/[<>:"/\\|?*]/g, '');
-    link.download = `${sanitizedName}-summary.json`;
+    const sanitizedName = patient.name.replace(/\s+/g, '_').replace(/[<>:"\/\\|?*]/g, '');
+    link.download = `${sanitizedName}-summaries.json`;
     
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  // Fetch referral letters when activeView changes to referral-letters
+  useEffect(() => {
+    if (activeView === 'referral-letters') {
+      fetchReferralLetters();
+    }
+  }, [activeView, patient.id]);
+
+  // Fetch patient summaries when activeView changes to summary
+  useEffect(() => {
+    if (activeView === 'summary') {
+      fetchPatientSummaries();
+    }
+  }, [activeView, patient.id]);
+
+  const fetchPatientSummaries = async () => {
+    setIsLoadingPatientSummaries(true);
+    try {
+      const response = await fetch(`/api/patients/${patient.id}/summaries`);
+      if (response.ok) {
+        const data = await response.json();
+        setPatientSummaries(data);
+      }
+    } catch (error) {
+      console.error('Error fetching patient summaries:', error);
+    } finally {
+      setIsLoadingPatientSummaries(false);
+    }
+  };
+
+  const handleSavePatientSummary = async () => {
+    if (!summaryForm.title.trim() || !summaryForm.content.trim()) {
+      alert('タイトルと本文を入力してください');
+      return;
+    }
+
+    setIsSavingPatientSummary(true);
+    try {
+      const url = editingPatientSummaryId
+        ? `/api/patients/${patient.id}/summaries/${editingPatientSummaryId}`
+        : `/api/patients/${patient.id}/summaries`;
+      const method = editingPatientSummaryId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: summaryForm.title,
+          content: summaryForm.content,
+        }),
+      });
+
+      if (response.ok) {
+        setSummaryForm({ title: '', content: '' });
+        setEditingPatientSummaryId(null);
+        await fetchPatientSummaries();
+      } else {
+        const error = await response.json();
+        alert(error.error || '保存に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error saving patient summary:', error);
+      alert('保存に失敗しました');
+    } finally {
+      setIsSavingPatientSummary(false);
+    }
+  };
+
+  const handleEditPatientSummary = (summary: PatientSummary) => {
+    setEditingPatientSummaryId(summary.id);
+    setSummaryForm({
+      title: summary.title,
+      content: summary.content,
+    });
+  };
+
+  const handleCancelEditPatientSummary = () => {
+    setEditingPatientSummaryId(null);
+    setSummaryForm({ title: '', content: '' });
+  };
+
+  const handleDeletePatientSummary = async (summaryId: string) => {
+    if (!confirm('このサマリを削除してもよろしいですか？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/patients/${patient.id}/summaries/${summaryId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        if (editingPatientSummaryId === summaryId) {
+          handleCancelEditPatientSummary();
+        }
+        await fetchPatientSummaries();
+      } else {
+        alert('削除に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error deleting patient summary:', error);
+      alert('削除に失敗しました');
+    }
+  };
+
+  const fetchReferralLetters = async () => {
+    setIsLoadingReferralLetters(true);
+    try {
+      const response = await fetch(`/api/patients/${patient.id}/referral-letters`);
+      if (response.ok) {
+        const data = await response.json();
+        setReferralLetters(data);
+      }
+    } catch (error) {
+      console.error('Error fetching referral letters:', error);
+    } finally {
+      setIsLoadingReferralLetters(false);
+    }
+  };
+
+  const handleSaveReferralLetter = async () => {
+    if (!referralLetterForm.destinationHospital.trim() || !referralLetterForm.content.trim()) {
+      alert('宛先医療機関名と本文を入力してください');
+      return;
+    }
+
+    setIsSavingReferralLetter(true);
+    try {
+      const url = editingReferralLetterId
+        ? `/api/patients/${patient.id}/referral-letters/${editingReferralLetterId}`
+        : `/api/patients/${patient.id}/referral-letters`;
+      const method = editingReferralLetterId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destinationHospital: referralLetterForm.destinationHospital,
+          content: referralLetterForm.content,
+        }),
+      });
+
+      if (response.ok) {
+        setReferralLetterForm({ destinationHospital: '', content: '' });
+        setEditingReferralLetterId(null);
+        await fetchReferralLetters();
+      } else {
+        const error = await response.json();
+        alert(error.error || '保存に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error saving referral letter:', error);
+      alert('保存に失敗しました');
+    } finally {
+      setIsSavingReferralLetter(false);
+    }
+  };
+
+  const handleEditReferralLetter = (letter: ReferralLetter) => {
+    setEditingReferralLetterId(letter.id);
+    setReferralLetterForm({
+      destinationHospital: letter.destinationHospital,
+      content: letter.content,
+    });
+  };
+
+  const handleCancelEditReferralLetter = () => {
+    setEditingReferralLetterId(null);
+    setReferralLetterForm({ destinationHospital: '', content: '' });
+  };
+
+  const handleDeleteReferralLetter = async (letterId: string) => {
+    if (!confirm('この診療情報提供書を削除してもよろしいですか？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/patients/${patient.id}/referral-letters/${letterId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        if (editingReferralLetterId === letterId) {
+          handleCancelEditReferralLetter();
+        }
+        await fetchReferralLetters();
+      } else {
+        alert('削除に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error deleting referral letter:', error);
+      alert('削除に失敗しました');
+    }
   };
 
   return (
@@ -805,7 +1016,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
             </button>
             <button
               onClick={() => {
-                if (activeView === 'summary' && patient.summary) {
+                if (activeView === 'summary' && patientSummaries.length > 0) {
                   handleExportSummary();
                 } else if (showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0) {
                   handleExportMedicalRecords();
@@ -813,16 +1024,33 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               }}
               disabled={
                 !((showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0) ||
-                  (activeView === 'summary' && patient.summary))
+                  (activeView === 'summary' && patientSummaries.length > 0))
               }
               className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
                 (showPastRecordsOnly && patient.medicalRecords && patient.medicalRecords.length > 0) ||
-                (activeView === 'summary' && patient.summary)
+                (activeView === 'summary' && patientSummaries.length > 0)
                   ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
                   : 'bg-gray-200 border border-gray-400 text-gray-700 opacity-50 cursor-not-allowed'
               }`}
             >
               エクスポート
+            </button>
+            <button
+              onClick={() => {
+                setActiveView('referral-letters');
+                setShowPastRecordsOnly(false);
+                setShowMonitoring(false);
+                setShowProgressChart(false);
+                setIsDrawerOpen(false);
+                setEditingRecordId(null);
+              }}
+              className={`px-3 py-1.5 rounded text-xs shadow-sm transition-colors ${
+                activeView === 'referral-letters'
+                  ? 'bg-white border-2 border-blue-600 text-blue-700 font-semibold hover:bg-blue-50'
+                  : 'bg-gray-200 border border-gray-400 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              診療情報提供書
             </button>
           </div>
 
@@ -861,8 +1089,8 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
       </div>
 
       {/* Central Panel - Record Details */}
-      <div className={`flex-1 bg-white ${showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'overflow-hidden flex flex-col' : showMonitoring ? 'overflow-y-auto' : 'overflow-y-auto'} ${showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'p-0' : showMonitoring ? 'p-3 md:pt-6 md:px-6 md:pb-0' : 'p-3 md:pt-6 md:px-6 md:pb-0'}`}>
-        <div className={showPastRecordsOnly || (activeView === 'summary' && !shouldUseTwoColumns) ? 'flex-1 flex flex-col min-h-0' : showMonitoring ? 'p-0' : activeView === 'summary' && shouldUseTwoColumns ? 'p-3 md:pt-6 md:px-6 md:pb-0' : 'mb-4 p-3 md:pt-6 md:px-6 md:pb-0'}>
+      <div className={`flex-1 bg-white ${showPastRecordsOnly ? 'overflow-hidden flex flex-col' : showMonitoring ? 'overflow-y-auto' : 'overflow-y-auto'} ${showPastRecordsOnly ? 'p-0' : showMonitoring ? 'p-3 md:pt-6 md:px-6 md:pb-0' : 'p-3 md:pt-6 md:px-6 md:pb-0'}`}>
+        <div className={showPastRecordsOnly ? 'flex-1 flex flex-col min-h-0' : showMonitoring ? 'p-0' : 'mb-4 p-3 md:pt-6 md:px-6 md:pb-0'}>
           {/* Patient Information Section */}
           {activeView === 'patient-info' && (
             <>
@@ -1070,114 +1298,199 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
             </div>
           )}
 
+          {/* Referral Letters Section */}
+          {activeView === 'referral-letters' && (
+            <div className="space-y-4">
+              {/* Input Form */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
+                <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">
+                  {editingReferralLetterId ? '診療情報提供書を編集' : '診療情報提供書を作成'}
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">宛先医療機関名</label>
+                    <input
+                      type="text"
+                      value={referralLetterForm.destinationHospital}
+                      onChange={(e) => setReferralLetterForm(prev => ({ ...prev, destinationHospital: e.target.value }))}
+                      className="w-full px-3 py-2 text-xs md:text-sm text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="医療機関名を入力"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">本文</label>
+                    <textarea
+                      value={referralLetterForm.content}
+                      onChange={(e) => setReferralLetterForm(prev => ({ ...prev, content: e.target.value }))}
+                      className="w-full text-xs md:text-sm text-gray-800 bg-white p-2 md:p-3 rounded border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[200px]"
+                      placeholder="診療情報提供書の本文を入力してください"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    {editingReferralLetterId && (
+                      <button
+                        type="button"
+                        onClick={handleCancelEditReferralLetter}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-xs md:text-sm font-medium hover:bg-gray-300 transition-colors"
+                      >
+                        キャンセル
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleSaveReferralLetter}
+                      disabled={isSavingReferralLetter}
+                      className="px-4 py-2 bg-blue-600 text-white rounded text-xs md:text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSavingReferralLetter ? '保存中...' : (editingReferralLetterId ? '更新' : '保存')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
+                <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去の診療情報提供書</h3>
+                {isLoadingReferralLetters ? (
+                  <p className="text-xs text-gray-600">読み込み中...</p>
+                ) : referralLetters.length === 0 ? (
+                  <p className="text-xs text-gray-600">診療情報提供書がありません。</p>
+                ) : (
+                  <div className="space-y-3">
+                    {referralLetters.map((letter) => (
+                      <div key={letter.id} className="border-l-4 border-blue-600 pl-4 py-2.5 text-sm bg-white rounded-r shadow-sm">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-gray-800 text-xs md:text-sm">
+                              {letter.createdAt ? new Date(letter.createdAt).toLocaleDateString('ja-JP') : ''} - {letter.destinationHospital}
+                            </div>
+                            {letter.authorName && (
+                              <div className="text-gray-500 text-xs mt-0.5">
+                                作成者: {letter.authorName} {letter.authorRole ? `(${getRoleLabel(letter.authorRole)})` : ''}
+                              </div>
+                            )}
+                            <div className="text-gray-700 mt-2 text-xs whitespace-pre-line leading-relaxed">
+                              {letter.content}
+                            </div>
+                          </div>
+                          <div className="flex gap-1 ml-2 flex-shrink-0">
+                            <button
+                              onClick={() => handleEditReferralLetter(letter)}
+                              className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                            >
+                              編集
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReferralLetter(letter.id)}
+                              className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+                            >
+                              削除
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Summary View Section */}
           {activeView === 'summary' && (
-            <div className={shouldUseTwoColumns ? 'flex gap-4' : 'flex flex-col flex-1 min-h-0'}>
-              {/* Landscape Mode: Two Columns */}
-              {shouldUseTwoColumns ? (
-                <>
-                  {/* Left Column: Summary */}
-                  <div className="w-1/2 overflow-y-auto">
-                    {patient.summary ? (
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
-                        <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリ</h3>
-                        <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-                          {patient.summary}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
-                        <p className="text-xs md:text-sm text-gray-600">サマリがありません。</p>
-                      </div>
+            <div className="space-y-4">
+              {/* Input Form */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
+                <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">
+                  {editingPatientSummaryId ? 'サマリを編集' : 'サマリを作成'}
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">タイトル</label>
+                    <input
+                      type="text"
+                      value={summaryForm.title}
+                      onChange={(e) => setSummaryForm(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-3 py-2 text-xs md:text-sm text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="サマリのタイトルを入力"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">本文</label>
+                    <textarea
+                      value={summaryForm.content}
+                      onChange={(e) => setSummaryForm(prev => ({ ...prev, content: e.target.value }))}
+                      className="w-full text-xs md:text-sm text-gray-800 bg-white p-2 md:p-3 rounded border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[200px]"
+                      placeholder="サマリの本文を入力してください"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    {editingPatientSummaryId && (
+                      <button
+                        type="button"
+                        onClick={handleCancelEditPatientSummary}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-xs md:text-sm font-medium hover:bg-gray-300 transition-colors"
+                      >
+                        キャンセル
+                      </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={handleSavePatientSummary}
+                      disabled={isSavingPatientSummary}
+                      className="px-4 py-2 bg-blue-600 text-white rounded text-xs md:text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSavingPatientSummary ? '保存中...' : (editingPatientSummaryId ? '更新' : '保存')}
+                    </button>
                   </div>
+                </div>
+              </div>
 
-                  {/* Right Column: Input Form */}
-                  <div className="w-1/2 overflow-y-auto">
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
-                      <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリへの質問または更新</h3>
-                      <div className="space-y-4">
-                        <textarea
-                          value={summaryInput}
-                          onChange={(e) => setSummaryInput(e.target.value)}
-                          className="w-full text-xs md:text-sm text-gray-800 bg-white p-2 md:p-3 rounded border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[200px]"
-                          placeholder="質問または更新内容を入力してください"
-                        />
-                        <div className="flex justify-end gap-2 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => {}}
-                            disabled
-                            className="px-4 py-2 bg-gray-200 text-gray-500 rounded text-xs md:text-sm font-medium transition-colors cursor-not-allowed opacity-50"
-                          >
-                            質問
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {}}
-                            disabled
-                            className="px-4 py-2 bg-gray-200 text-gray-500 rounded text-xs md:text-sm font-medium transition-colors cursor-not-allowed opacity-50"
-                          >
-                            更新
-                          </button>
+              {/* List */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
+                <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">過去のサマリ</h3>
+                {isLoadingPatientSummaries ? (
+                  <p className="text-xs text-gray-600">読み込み中...</p>
+                ) : patientSummaries.length === 0 ? (
+                  <p className="text-xs text-gray-600">サマリがありません。</p>
+                ) : (
+                  <div className="space-y-3">
+                    {patientSummaries.map((summary) => (
+                      <div key={summary.id} className="border-l-4 border-blue-600 pl-4 py-2.5 text-sm bg-white rounded-r shadow-sm">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-gray-800 text-xs md:text-sm">
+                              {summary.createdAt ? new Date(summary.createdAt).toLocaleDateString('ja-JP') : ''} - {summary.title}
+                            </div>
+                            {summary.authorName && (
+                              <div className="text-gray-500 text-xs mt-0.5">
+                                作成者: {summary.authorName} {summary.authorRole ? `(${getRoleLabel(summary.authorRole)})` : ''}
+                              </div>
+                            )}
+                            <div className="text-gray-700 mt-2 text-xs whitespace-pre-line leading-relaxed">
+                              {summary.content}
+                            </div>
+                          </div>
+                          <div className="flex gap-1 ml-2 flex-shrink-0">
+                            <button
+                              onClick={() => handleEditPatientSummary(summary)}
+                              className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                            >
+                              編集
+                            </button>
+                            <button
+                              onClick={() => handleDeletePatientSummary(summary.id)}
+                              className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+                            >
+                              削除
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                </>
-              ) : (
-                /* Portrait Mode: Two Scrollable Areas */
-                <>
-                  {/* Upper Area: Summary */}
-                  <div className="flex-1 overflow-y-auto min-h-0 mb-2">
-                    {patient.summary ? (
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
-                        <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリ</h3>
-                        <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-                          {patient.summary}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
-                        <p className="text-xs md:text-sm text-gray-600">サマリがありません。</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Lower Area: Input Form */}
-                  <div className="flex-1 overflow-y-auto min-h-0">
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm">
-                      <h3 className="font-bold mb-3 md:mb-4 text-xs md:text-sm text-gray-800 border-b border-gray-400 pb-1">サマリへの質問または更新</h3>
-                      <div className="space-y-4">
-                        <textarea
-                          value={summaryInput}
-                          onChange={(e) => setSummaryInput(e.target.value)}
-                          className="w-full text-xs md:text-sm text-gray-800 bg-white p-2 md:p-3 rounded border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[200px]"
-                          placeholder="質問または更新内容を入力してください"
-                        />
-                        <div className="flex justify-end gap-2 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => {}}
-                            disabled
-                            className="px-4 py-2 bg-gray-200 text-gray-500 rounded text-xs md:text-sm font-medium transition-colors cursor-not-allowed opacity-50"
-                          >
-                            質問
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {}}
-                            disabled
-                            className="px-4 py-2 bg-gray-200 text-gray-500 rounded text-xs md:text-sm font-medium transition-colors cursor-not-allowed opacity-50"
-                          >
-                            更新
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
           )}
 
@@ -1193,10 +1506,10 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
               {(shouldUseTwoColumns || showPastRecordsOnly) && !showMonitoring && !showProgressChart && (
                 <div className={showPastRecordsOnly ? 'w-full flex-1 flex flex-col min-h-0' : 'w-1/2'}>
                   {/* Summary Section */}
-                  {!showPastRecordsOnly && patient.summary && (
+                  {!showPastRecordsOnly && patientSummaries.length > 0 && (
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:pt-5 md:px-5 md:pb-2 rounded-lg border-2 border-gray-300 shadow-sm mb-4">
                       <div className="flex items-center justify-between border-b border-gray-400 pb-1 mb-3 md:mb-4">
-                        <h3 className="font-bold text-xs md:text-sm text-gray-800">サマリ</h3>
+                        <h3 className="font-bold text-xs md:text-sm text-gray-800">最新サマリ: {patientSummaries[0]?.title}</h3>
                         <button
                           onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
                           className="text-gray-600 hover:text-gray-800 transition-colors p-1 rounded hover:bg-gray-200"
@@ -1215,7 +1528,7 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                       </div>
                       {isSummaryExpanded && (
                         <div className="text-xs md:text-sm text-gray-800 whitespace-pre-line leading-relaxed">
-                          {patient.summary}
+                          {patientSummaries[0]?.content}
                         </div>
                       )}
                     </div>

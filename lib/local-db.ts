@@ -30,7 +30,6 @@ interface LocalPatient {
   smokingHistory?: string;
   drinkingHistory?: string;
   specialNotes?: string;
-  summary?: string;
   department?: string;
   bed?: string;
   admissionDate?: string;
@@ -116,6 +115,34 @@ interface LocalMonitoringRecord {
   updatedAt: string;
 }
 
+interface LocalReferralLetter {
+  id: string;
+  patientId: string;
+  recordId: string;
+  destinationHospital: string;
+  content: string;
+  authorId?: string;
+  authorRole?: string;
+  authorName?: string;
+  deletedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface LocalPatientSummary {
+  id: string;
+  patientId: string;
+  recordId: string;
+  title: string;
+  content: string;
+  authorId?: string;
+  authorRole?: string;
+  authorName?: string;
+  deletedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface LocalUser {
   id: string;
   username: string;
@@ -183,6 +210,8 @@ interface LocalStore {
   visits: LocalVisit[];
   medicalRecords: LocalMedicalRecord[];
   monitoringRecords: LocalMonitoringRecord[];
+  referralLetters: LocalReferralLetter[];
+  patientSummaries: LocalPatientSummary[];
   users: LocalUser[];
   appSettings: LocalAppSetting[];
   auditLogs: LocalAuditLog[];
@@ -334,10 +363,12 @@ async function createInitialStore(): Promise<LocalStore> {
   const patients: LocalPatient[] = [];
   const visits: LocalVisit[] = [];
   const medicalRecords: LocalMedicalRecord[] = [];
+  const patientSummaries: LocalPatientSummary[] = [];
 
   for (const patient of legacyPatients) {
+    const patientId = String(patient.id);
     patients.push({
-      id: String(patient.id),
+      id: patientId,
       patientCode: patient.patientCode,
       name: patient.name,
       nameKana: patient.nameKana,
@@ -358,7 +389,6 @@ async function createInitialStore(): Promise<LocalStore> {
       smokingHistory: patient.smokingHistory,
       drinkingHistory: patient.drinkingHistory,
       specialNotes: patient.specialNotes,
-      summary: patient.summary,
       department: patient.department,
       bed: patient.bed,
       admissionDate: patient.admissionDate,
@@ -382,6 +412,23 @@ async function createInitialStore(): Promise<LocalStore> {
       createdAt: timestamp,
       updatedAt: timestamp,
     });
+
+    // Migrate legacy summary to PatientSummary
+    if (patient.summary) {
+      patientSummaries.push({
+        id: randomUUID(),
+        patientId,
+        recordId: randomUUID(),
+        title: 'サマリ',
+        content: patient.summary,
+        authorId: undefined,
+        authorRole: undefined,
+        authorName: undefined,
+        deletedAt: null,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+    }
 
     for (const visit of patient.visits ?? []) {
       visits.push({
@@ -428,6 +475,8 @@ async function createInitialStore(): Promise<LocalStore> {
     visits,
     medicalRecords,
     monitoringRecords: [],
+    referralLetters: [],
+    patientSummaries,
     users: [createDemoUser()],
     appSettings: [],
     auditLogs: [],
@@ -448,7 +497,17 @@ async function ensureStoreFile() {
 async function readStore(): Promise<LocalStore> {
   await ensureStoreFile();
   const raw = await fs.readFile(LOCAL_DB_PATH, 'utf-8');
-  return JSON.parse(raw) as LocalStore;
+  const store = JSON.parse(raw) as LocalStore;
+
+  // Migrate old stores that are missing new fields
+  if (!store.referralLetters) {
+    store.referralLetters = [];
+  }
+  if (!store.patientSummaries) {
+    store.patientSummaries = [];
+  }
+
+  return store;
 }
 
 async function writeStore(store: LocalStore) {
@@ -477,6 +536,20 @@ function materializePatient(store: LocalStore, patient: LocalPatient, include?: 
     result.monitoringRecords = sortItems(
       store.monitoringRecords.filter((record) => record.patientId === patient.id),
       include.monitoringRecords.orderBy
+    );
+  }
+
+  if (include?.referralLetters) {
+    result.referralLetters = sortItems(
+      store.referralLetters.filter((record) => record.patientId === patient.id),
+      include.referralLetters.orderBy
+    );
+  }
+
+  if (include?.patientSummaries) {
+    result.patientSummaries = sortItems(
+      store.patientSummaries.filter((record) => record.patientId === patient.id),
+      include.patientSummaries.orderBy
     );
   }
 
@@ -599,6 +672,8 @@ export const localPrisma = {
         store.visits = store.visits.filter((visit) => visit.patientId !== patient.id);
         store.medicalRecords = store.medicalRecords.filter((record) => record.patientId !== patient.id);
         store.monitoringRecords = store.monitoringRecords.filter((record) => record.patientId !== patient.id);
+        store.referralLetters = store.referralLetters.filter((record) => record.patientId !== patient.id);
+        store.patientSummaries = store.patientSummaries.filter((record) => record.patientId !== patient.id);
 
         return patient;
       }, true);
@@ -749,6 +824,112 @@ export const localPrisma = {
         }
 
         const [record] = store.monitoringRecords.splice(index, 1);
+        return record;
+      }, true);
+    },
+  },
+  referralLetter: {
+    async findMany(args: { where?: Record<string, any>; orderBy?: Record<string, SortDirection> } = {}) {
+      return withStore((store) => sortItems(store.referralLetters.filter((item) => matchesWhere(item, args.where)), args.orderBy));
+    },
+    async findFirst(args: { where?: Record<string, any> } = {}) {
+      return withStore((store) => store.referralLetters.find((item) => matchesWhere(item, args.where)) ?? null);
+    },
+    async create(args: { data: Record<string, any> }) {
+      return withStore((store) => {
+        const timestamp = nowIso();
+        const record: LocalReferralLetter = {
+          id: randomUUID(),
+          recordId: args.data.recordId ?? randomUUID(),
+          patientId: args.data.patientId,
+          destinationHospital: args.data.destinationHospital,
+          content: args.data.content,
+          authorId: args.data.authorId,
+          authorRole: args.data.authorRole,
+          authorName: args.data.authorName,
+          deletedAt: null,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        };
+
+        store.referralLetters.push(record);
+        return record;
+      }, true);
+    },
+    async update(args: { where: { id: string }; data: Record<string, any> }) {
+      return withStore((store) => {
+        const record = store.referralLetters.find((item) => item.id === args.where.id);
+
+        if (!record) {
+          throw new Error(`Referral letter not found: ${args.where.id}`);
+        }
+
+        Object.assign(record, args.data, { updatedAt: nowIso() });
+        return record;
+      }, true);
+    },
+    async delete(args: { where: { id: string } }) {
+      return withStore((store) => {
+        const index = store.referralLetters.findIndex((item) => item.id === args.where.id);
+
+        if (index === -1) {
+          throw new Error(`Referral letter not found: ${args.where.id}`);
+        }
+
+        const [record] = store.referralLetters.splice(index, 1);
+        return record;
+      }, true);
+    },
+  },
+  patientSummary: {
+    async findMany(args: { where?: Record<string, any>; orderBy?: Record<string, SortDirection> } = {}) {
+      return withStore((store) => sortItems(store.patientSummaries.filter((item) => matchesWhere(item, args.where)), args.orderBy));
+    },
+    async findFirst(args: { where?: Record<string, any> } = {}) {
+      return withStore((store) => store.patientSummaries.find((item) => matchesWhere(item, args.where)) ?? null);
+    },
+    async create(args: { data: Record<string, any> }) {
+      return withStore((store) => {
+        const timestamp = nowIso();
+        const record: LocalPatientSummary = {
+          id: randomUUID(),
+          recordId: args.data.recordId ?? randomUUID(),
+          patientId: args.data.patientId,
+          title: args.data.title,
+          content: args.data.content,
+          authorId: args.data.authorId,
+          authorRole: args.data.authorRole,
+          authorName: args.data.authorName,
+          deletedAt: null,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        };
+
+        store.patientSummaries.push(record);
+        return record;
+      }, true);
+    },
+    async update(args: { where: { id: string }; data: Record<string, any> }) {
+      return withStore((store) => {
+        const record = store.patientSummaries.find((item) => item.id === args.where.id);
+
+        if (!record) {
+          throw new Error(`Patient summary not found: ${args.where.id}`);
+        }
+
+        Object.assign(record, args.data, { updatedAt: nowIso() });
+        return record;
+      }, true);
+    },
+    async delete(args: { where: { id: string } }) {
+      return withStore((store) => {
+        const index = store.patientSummaries.findIndex((item) => item.id === args.where.id);
+
+        if (index === -1) {
+          throw new Error(`Patient summary not found: ${args.where.id}`);
+        }
+
+        const [record] = store.patientSummaries.splice(index, 1);
         return record;
       }, true);
     },

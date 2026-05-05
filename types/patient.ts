@@ -56,14 +56,17 @@ export interface Patient {
   
   // Monitoring Records
   monitoringRecords?: MonitoringRecord[];
-  
+
+  // Referral Letters
+  referralLetters?: ReferralLetter[];
+
+  // Patient Summaries
+  patientSummaries?: PatientSummary[];
+
   // Additional Medical Information
   chiefComplaint?: string;
   smokingHistory?: string;
   drinkingHistory?: string;
-  
-  // Summary
-  summary?: string;
 }
 
 export interface Visit {
@@ -129,6 +132,34 @@ export interface MonitoringRecord {
   urinationCount?: number;
   drainOutput?: number;
   other?: string;
+}
+
+export interface ReferralLetter {
+  id: string;
+  recordId: string;
+  patientId: string;
+  destinationHospital: string;
+  content: string;
+  authorId?: string;
+  authorRole?: string;
+  authorName?: string;
+  deletedAt?: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
+export interface PatientSummary {
+  id: string;
+  recordId: string;
+  patientId: string;
+  title: string;
+  content: string;
+  authorId?: string;
+  authorRole?: string;
+  authorName?: string;
+  deletedAt?: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 

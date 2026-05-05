@@ -54,7 +54,6 @@ function transformPatient(patient: any): Patient {
     chiefComplaint: patient.chiefComplaint || undefined,
     smokingHistory: patient.smokingHistory || undefined,
     drinkingHistory: patient.drinkingHistory || undefined,
-    summary: patient.summary || undefined,
     visits: patient.visits?.map((v: any) => ({
       id: v.visitId || v.id,
       date: v.date,

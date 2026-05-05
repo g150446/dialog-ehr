@@ -65,13 +65,12 @@ model Patient {
   smokingHistory        String?  @db.Text
   drinkingHistory       String?  @db.Text
   
-  // Summary
-  summary               String?  @db.Text
-  
   // Relations
   visits                Visit[]
   medicalRecords        MedicalRecord[]
   monitoringRecords     MonitoringRecord[]
+  referralLetters       ReferralLetter[]
+  patientSummaries      PatientSummary[]
   
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -251,6 +250,52 @@ enum UserRole {
   NURSE              // Nursing staff - patient care & monitoring
   PHARMACIST         // Pharmacy staff - medication access
   MEDICAL_CLERK      // Medical records clerk - data entry
+}
+
+model ReferralLetter {
+  id                   String   @id @default(uuid())
+  recordId             String   @unique
+  patientId            String
+  patient              Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  destinationHospital  String
+  content              String   @db.Text
+
+  // Author information
+  authorId             String?
+  authorRole           String?
+  authorName           String?
+
+  deletedAt            DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([deletedAt])
+  @@map("referral_letters")
+}
+
+model PatientSummary {
+  id                   String   @id @default(uuid())
+  recordId             String   @unique
+  patientId            String
+  patient              Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  title                String
+  content              String   @db.Text
+
+  // Author information
+  authorId             String?
+  authorRole           String?
+  authorName           String?
+
+  deletedAt            DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([deletedAt])
+  @@map("patient_summaries")
 }
 
 model AuditLog {
