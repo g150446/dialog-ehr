@@ -1309,11 +1309,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">宛先医療機関名</label>
-                    <input
-                      type="text"
+                    <textarea
+                      rows={2}
                       value={referralLetterForm.destinationHospital}
                       onChange={(e) => setReferralLetterForm(prev => ({ ...prev, destinationHospital: e.target.value }))}
-                      className="w-full px-3 py-2 text-xs md:text-sm text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 text-xs md:text-sm text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                       placeholder="医療機関名を入力"
                     />
                   </div>
@@ -1407,11 +1407,11 @@ export default function PatientContent({ patient, age, bmi }: PatientContentProp
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">タイトル</label>
-                    <input
-                      type="text"
+                    <textarea
+                      rows={2}
                       value={summaryForm.title}
                       onChange={(e) => setSummaryForm(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full px-3 py-2 text-xs md:text-sm text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 text-xs md:text-sm text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                       placeholder="サマリのタイトルを入力"
                     />
                   </div>
