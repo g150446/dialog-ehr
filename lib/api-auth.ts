@@ -6,7 +6,21 @@ export interface AuthContext {
   isAdmin: boolean;
 }
 
+const isAuthRequired = (): boolean => {
+  return process.env.EHR_AUTH_REQUIRED === 'true';
+};
+
+const defaultAuthContext: AuthContext = {
+  userId: 'demo-admin',
+  userRole: 'DOCTOR',
+  isAdmin: true,
+};
+
 export async function requireAuth(request: NextRequest): Promise<AuthContext> {
+  if (!isAuthRequired()) {
+    return defaultAuthContext;
+  }
+
   const userId = request.headers.get('x-user-id');
   const userRole = request.headers.get('x-user-role');
   const isAdmin = request.headers.get('x-user-is-admin') === 'true';

@@ -1,8 +1,12 @@
 # Dialog EHR
 
-Dialog EHR is an **open-source** Electronic Health Record demo built with Next.js, TypeScript, Tailwind CSS, and Prisma.
+> **⚠️ Note:** This application is currently intended as a **hackathon demo / prototype**. It may be developed further for real clinical use in the future.
+>
+> **License:** Apache 2.0
 
-The project now runs in two modes:
+Dialog EHR is an **open-source** Electronic Health Record system built with Next.js, TypeScript, Tailwind CSS, and Prisma.
+
+The project runs in two modes:
 
 | Mode | Use case | Database required |
 | --- | --- | --- |
@@ -15,10 +19,11 @@ The project now runs in two modes:
 
 - Patient list and patient detail views
 - Medical record and monitoring record APIs
-- Session-based authentication
+- Session-based authentication (can be disabled for demo mode)
 - Demo login account for local testing
 - Optional HTTPS development mode for secure browser APIs
 - Optional PostgreSQL + Prisma workflow
+- Referral letters and patient summaries
 
 ## Quick start
 
@@ -34,10 +39,11 @@ npm install
 cp .env.example .env
 ```
 
-The default `.env.example` already enables local mode:
+The default `.env.example` already enables local mode with open access (no login required):
 
 ```bash
 EHR_STORAGE_MODE=local
+EHR_AUTH_REQUIRED=false
 ```
 
 ### 3. Start the app
@@ -48,13 +54,21 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### 4. Log in
+The app is accessible without login in the default configuration.
+
+### 4. Optional: enable login
+
+To require authentication, set in your `.env`:
+
+```bash
+EHR_AUTH_REQUIRED=true
+```
+
+Then restart the app. Use the demo account to log in:
 
 | Field | Value |
 | --- | --- |
-| Login ID | `admin` |
 | Username | `admin` |
-| Password name | `Admin123!` |
 | Password | `Admin123!` |
 
 ## Local mode
@@ -136,6 +150,7 @@ npx tsx scripts/seed-admin.ts
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `EHR_STORAGE_MODE` | `local` or `postgres` | `local` |
+| `EHR_AUTH_REQUIRED` | `true` to require login, `false` for open access | `false` |
 | `DATABASE_URL` | PostgreSQL connection string | unused in local mode |
 | `SESSION_SECRET` | `iron-session` secret | development fallback |
 | `MAX_FAILED_LOGIN_ATTEMPTS` | Account lock threshold | `5` |
@@ -170,3 +185,4 @@ data/local-storage.json Generated local runtime data (not committed)
 - Local mode is the recommended setup for test patients and test login accounts.
 - PostgreSQL mode remains available for teams that still want DB-backed development.
 - This repository is an **open-source** EHR demo and development environment, not a commercial EHR product.
+- Authentication can be disabled entirely by setting `EHR_AUTH_REQUIRED=false`. This is useful for demos and prototyping.
