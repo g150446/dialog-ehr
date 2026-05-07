@@ -6,6 +6,8 @@ import bcrypt from 'bcryptjs';
 const LOCAL_DB_PATH = path.join(process.cwd(), 'data', 'local-storage.json');
 const LEGACY_DB_PATH = path.join(process.cwd(), 'db.json');
 
+const isVercel = () => process.env.VERCEL === '1';
+
 type SortDirection = 'asc' | 'desc';
 
 interface LocalPatient {
@@ -217,6 +219,8 @@ interface LocalStore {
   auditLogs: LocalAuditLog[];
   recordHistory: LocalRecordHistory[];
 }
+
+let memoryStore: LocalStore | null = null;
 
 function nowIso() {
   return new Date().toISOString();
@@ -485,6 +489,13 @@ async function createInitialStore(): Promise<LocalStore> {
 }
 
 async function ensureStoreFile() {
+  if (isVercel()) {
+    if (!memoryStore) {
+      memoryStore = await createInitialStore();
+    }
+    return;
+  }
+
   try {
     await fs.access(LOCAL_DB_PATH);
   } catch {
@@ -496,6 +507,11 @@ async function ensureStoreFile() {
 
 async function readStore(): Promise<LocalStore> {
   await ensureStoreFile();
+
+  if (isVercel()) {
+    return memoryStore!;
+  }
+
   const raw = await fs.readFile(LOCAL_DB_PATH, 'utf-8');
   const store = JSON.parse(raw) as LocalStore;
 
@@ -511,6 +527,11 @@ async function readStore(): Promise<LocalStore> {
 }
 
 async function writeStore(store: LocalStore) {
+  if (isVercel()) {
+    // On Vercel, data lives only in memory and resets on each cold start
+    return;
+  }
+
   await fs.mkdir(path.dirname(LOCAL_DB_PATH), { recursive: true });
   await fs.writeFile(LOCAL_DB_PATH, JSON.stringify(store, null, 2));
 }
