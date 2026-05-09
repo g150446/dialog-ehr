@@ -439,18 +439,6 @@
             "heartRate": "82",
             "spO2": "97%(O2 1L) → 96%(RA)"
           },
-          "medications": [
-            {
-              "name": "プレドニン錠(5mg)",
-              "dosage": "6錠（30mg）",
-              "frequency": "分2 朝・夕食後"
-            },
-            {
-              "name": "シムビコートタービュヘイラー",
-              "dosage": "1回2吸入",
-              "frequency": "1日2回"
-            }
-          ],
           "physician": "中村 医師"
         },
         {
