@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import PatientContent from './PatientContent';
+import CheckoutButton from '@/app/components/CheckoutButton';
 import { Patient, Visit, MedicalRecord, MonitoringRecord } from '@/types/patient';
 
 interface PatientDetailPageProps {
@@ -183,6 +184,7 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
           <button className="px-2 md:px-3 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs text-gray-700 font-medium shadow-sm transition-colors">
             診察終了(E)
           </button>
+          {!patient.admissionDate && <CheckoutButton amount={100} />}
           <button className="px-2 md:px-3 py-1 md:py-1.5 bg-white hover:bg-gray-50 border border-blue-500 rounded text-xs text-gray-700 font-medium shadow-sm transition-colors">
             完了(X)
           </button>

@@ -50,3 +50,6 @@ docker-compose.override.yml
 
 # python virtual environment
 venv/
+
+# SSH login scripts (contain credentials)
+login_conoha.sh

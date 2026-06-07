@@ -14,6 +14,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx scripts/migrate-data.ts",
+    "db:seed-outpatient": "tsx scripts/seed-outpatient-patients.ts",
     "db:verify": "tsx scripts/verify-schema.ts",
     "db:check": "tsx scripts/check-data.ts",
     "db:migrate-blood-pressure": "tsx scripts/migrate-blood-pressure.ts",
@@ -35,7 +36,8 @@
     "prisma": "^6.19.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "recharts": "^2.12.7"
+    "recharts": "^2.12.7",
+    "square": "^44.1.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
