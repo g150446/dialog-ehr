@@ -180,6 +180,118 @@ db.json                Source patient data for local initialization
 data/local-storage.json Generated local runtime data (not committed)
 ```
 
+## Deploying to a VPS (Ubuntu)
+
+This section describes how to deploy the app in production on an Ubuntu VPS using PM2.
+
+### 1. Install Node.js 20
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+```
+
+### 2. Install PM2
+
+```bash
+npm install -g pm2
+```
+
+### 3. Clone the repository
+
+```bash
+git clone https://github.com/g150446/dialog-ehr.git /root/dialog-ehr
+cd /root/dialog-ehr
+```
+
+### 4. Create `.env`
+
+```bash
+EHR_STORAGE_MODE=local
+EHR_AUTH_REQUIRED=false
+SESSION_SECRET="your-random-32-char-secret"
+SQUARE_ACCESS_TOKEN=your_token
+SQUARE_LOCATION_ID=your_location_id
+SQUARE_DEVICE_ID=your_device_id
+```
+
+### 5. Copy patient data
+
+`data/local-storage.json` is not committed to git. Copy it from your local machine:
+
+```bash
+scp data/local-storage.json root@<your-vps-ip>:/root/dialog-ehr/data/
+```
+
+Or reset to defaults on the server:
+
+```bash
+# Just start the app — it initializes from db.json on first run
+```
+
+### 6. Build and start
+
+```bash
+npm install
+npm run build
+pm2 start npm --name "dialog-ehr" -- start
+```
+
+### 7. Set up Nginx reverse proxy (port 80)
+
+```bash
+apt-get install -y nginx
+```
+
+Create `/etc/nginx/sites-available/dialog-ehr`:
+
+```nginx
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+```bash
+ln -sf /etc/nginx/sites-available/dialog-ehr /etc/nginx/sites-enabled/dialog-ehr
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl restart nginx && systemctl enable nginx
+```
+
+### 8. Auto-start on reboot
+
+```bash
+pm2 save
+pm2 startup systemd -u root --hp /root
+# Run the printed command to enable the systemd service
+```
+
+## PM2 quick reference
+
+| Command | Purpose |
+| --- | --- |
+| `pm2 start npm --name "dialog-ehr" -- start` | Start the app |
+| `pm2 stop dialog-ehr` | Stop the app |
+| `pm2 restart dialog-ehr` | Restart the app |
+| `pm2 reload dialog-ehr` | Zero-downtime reload |
+| `pm2 list` | Show running processes and status |
+| `pm2 logs dialog-ehr` | Tail live logs |
+| `pm2 logs dialog-ehr --lines 50` | Show last 50 log lines |
+| `pm2 monit` | Live CPU/memory monitor |
+| `pm2 save` | Persist current process list for auto-restart |
+| `pm2 startup` | Generate systemd startup command |
+| `pm2 delete dialog-ehr` | Remove the app from PM2 |
+
 ## Notes
 
 - Local mode is the recommended setup for test patients and test login accounts.
